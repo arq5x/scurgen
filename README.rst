@@ -21,5 +21,5 @@ curve.::
 
 yields:
 
-	.. image:: https://raw.github.com/arq5x/scurgeon/master/cpg-islands.hg19.chr10.bed.png
+	.. image:: https://raw.github.com/arq5x/scurgen/master/cpg-islands.hg19.chr10.bed.png
 	
