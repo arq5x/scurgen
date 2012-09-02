@@ -12,6 +12,7 @@ import hilbert as hb
 
 def plot(parser, args):
     hm = hb.HilbertMatrix(args.file, args.genome, args.chrom, args.dim)
+    hm.mask_zeros()
     cmap = cm.get_cmap(args.cmap, 5)
     
     fig = plt.figure()
