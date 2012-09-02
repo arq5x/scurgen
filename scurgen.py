@@ -12,7 +12,7 @@ import hilbert as hb
 
 def plot(parser, args):
     hm = hb.HilbertMatrix(args.file, args.genome, args.chrom, args.dim)
-    hm.mask_zeros()
+    hm.mask_low_values(args.min_mask)
     cmap = cm.get_cmap(args.cmap, 5)
     
     fig = plt.figure()
@@ -29,23 +29,22 @@ def combine(parser, args):
     hm2 = hb.HilbertMatrix(args.file2, args.genome, args.chrom, args.dim, \
                            args.inc_col2 - 1)
                            
-    hm1.mask_zeros()
-    hm2.mask_zeros()
+    hm1.mask_low_values()
+    hm2.mask_low_values()
     
     # TO DO, set 0 == white (e.g., for centromere.)
     
-    cmap1 = cm.get_cmap(args.cmap1, 20)
-    cmap2 = cm.get_cmap(args.cmap2, 20)
+    cmap1 = cm.get_cmap(args.cmap1, 5)
+    cmap2 = cm.get_cmap(args.cmap2, 5)
     
     cmap1._init()
     cmap2._init() # create the _lut array, with rgba values
     
     # create your alpha array and fill the colormap with them.
     # here it is progressive, but you can create whathever you want
-    alphas = np.linspace(0, 0.8, cmap2.N+3)
-    cmap2._lut[:,-1] = alphas
-    alphas = np.linspace(0, 0.8, cmap1.N+3)
-    cmap1._lut[:,-1] = alphas
+    #alphas = np.linspace(0, 0.9, cmap2.N+3)
+    cmap1._lut[:,-1] = [0.5] * (cmap1.N+3)
+    cmap2._lut[:,-1] = [0.5] * (cmap2.N+3)
     
     cmap1.set_bad('w')
     cmap2.set_bad('w')
@@ -53,14 +52,12 @@ def combine(parser, args):
     # build fig1
     fig = plt.figure()
 
-    hilb1 = plt.imshow(hm1.matrix, interpolation='nearest', \
-                       cmap=cmap1, origin='lower')
+    hilb1 = plt.imshow(hm1.matrix, interpolation='nearest', cmap=cmap1)
     fig.savefig("_a.png", dpi=args.dpi, transparent=True)
     
     # build fig2
     fig = plt.figure()
-    hilb2 = plt.imshow(hm2.matrix, interpolation='nearest', \
-                       cmap=cmap2, origin='lower')
+    hilb2 = plt.imshow(hm2.matrix, interpolation='nearest', cmap=cmap2)
     fig.savefig("_b.png", dpi=args.dpi, transparent=True)
     
     # merge them
@@ -70,9 +67,9 @@ def combine(parser, args):
     #composite = Image.blend(background, foreground, 0.5)
     
     background.paste(foreground, (0, 0), foreground)
-    background.show()
-    #composite.show()
-    plt.show()
+    #background.show()
+
+    background.save("merge.png")
 
 
 
@@ -80,7 +77,7 @@ def main():
     #########################################
     # create the top-level parser
     #########################################
-    parser = argparse.ArgumentParser(prog='scurgeon')
+    parser = argparse.ArgumentParser(prog='scurgen')
     subparsers = parser.add_subparsers(title='[sub-commands]')
     
     #########################################
@@ -90,11 +87,11 @@ def main():
     parser_plot.add_argument('file', metavar='file',  
                             help='The name of the file to be plotted.')
 
-    parser_plot.add_argument('--genome', dest='genome', metavar='GENOME',
+    parser_plot.add_argument('--genome', dest='genome', metavar='STRING',
                         help='The genome the dataset comes from (e.g., hg19)?',
                         default='hg19')
 
-    parser_plot.add_argument('--chrom', dest='chrom', metavar='CHROM', 
+    parser_plot.add_argument('--chrom', dest='chrom', metavar='STRING', 
                         help='The chrom that should be plotted (e.g., chr1)')
     
     parser_plot.add_argument('--inc_col', dest='inc_col', \
@@ -103,19 +100,28 @@ def main():
                                       file.',
                                 default=-1)
 
-    parser_plot.add_argument('--dim', dest='dim', metavar='MATRIXDIM', 
+    parser_plot.add_argument('--dim', dest='dim', metavar='INTEGER', 
                         help='The dimensions of the curve.  A power of 2.',
                         type=int,
                         default=256)
     
-    parser_plot.add_argument('--color', dest='cmap', metavar='COLORMAP', 
-                        help='The name of the color map that should be used.')
+    parser_plot.add_argument('--min_mask', dest='min_mask', metavar='INTEGER', 
+                        help='The minimum value allowed in a cell before \
+                        it is set to the masking color (white).',
+                        type=int,
+                        default=0)
+    
+    parser_plot.add_argument('--cmap', dest='cmap', metavar='STRING', 
+                        help='The name of the matplotlib color map that \
+                              should be used. See \
+                              scipy.org/Cookbook/Matplotlib/Show_colormaps \
+                              for options.')
                         
-    parser_plot.add_argument('--format', dest='format', metavar='FORMAT', 
+    parser_plot.add_argument('--format', dest='format', metavar='STRING', 
                         help='The type of output figure to create.',
                         default='png')
                         
-    parser_plot.add_argument('--dpi', dest='dpi', metavar='DPI', 
+    parser_plot.add_argument('--dpi', dest='dpi', metavar='INTEGER', 
                         help='The resolution (in DPI) of the output.',
                         type=int,
                         default=150)

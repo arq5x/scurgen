@@ -104,11 +104,11 @@ class HilbertMatrix(object):
                     self._update_matrix(coords, \
                         increment=float(ivl[self.incr_column]))
                         
-    def mask_zeros(self):
+    def mask_low_values(self, min_val = 0):
         rows, cols = self.matrix.shape
         for r in range(rows):
             for c in range(cols):
-                if self.matrix[r][c] == 0:
+                if self.matrix[r][c] <= min_val:
                     self.matrix[r][c] = np.NaN
                     
     def norm_by_total_intervals(self):
