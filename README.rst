@@ -17,11 +17,26 @@ curve.::
 	python scurgen.py plot  --chrom chr10 \
                             --color Greens \
                             --format png \
+	                        --dim 128 \
                             data/cpg-islands.hg19.chr10.bed
 
 yields a PNG image named cpg-islands.hg19.chr10.bed.png:
 
 	.. image:: https://raw.github.com/arq5x/scurgen/master/cpg-islands.hg19.chr10.bed.png
+
+And let's do the same with 5' UTRs.::
+
+	python scurgen.py plot  --chrom chr10 \
+	                        --color Greens \
+	                        --format png \
+	                        --dim 128 \
+	                        data/refseq.chr10.exons.bed
+
+Voila:
+
+	.. image:: https://raw.github.com/arq5x/scurgen/master/refseq.chr10.exons.bed.png
+	
+
 	
 
 By default, we assume the chromosomes are humand (build 37 or hg19).  However, 
