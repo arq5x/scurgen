@@ -15,10 +15,10 @@ This module allows you to make a basic plot of genomic data using a Hilbert
 curve.::
 
 	python scurgen.py plot  --chrom chr10 \
-                            --color Greens \
-                            --format png \
+	                        --color Greens \
+	                        --format png \
 	                        --dim 128 \
-                            data/cpg-islands.hg19.chr10.bed
+	                        data/cpg-islands.hg19.chr10.bed
 
 yields a PNG image named cpg-islands.hg19.chr10.bed.png:
 
