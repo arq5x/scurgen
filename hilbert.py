@@ -11,7 +11,8 @@ def rot(n, x, y, rx, ry):
             y = n-1 - y
         # Swap x and y
         x, y = y, x
-
+    return (x, y)
+        
 def d2xy(n, d):
     t = d
     x = y = 0
@@ -20,7 +21,7 @@ def d2xy(n, d):
     while s < n:
         rx = 1 & (t/2)
         ry = 1 & (t ^ rx)
-        rot(s, x, y, rx, ry)
+        (x, y) = rot(s, x, y, rx, ry)
         x += (s * rx)
         y += (s * ry)
         t = t / 4
@@ -37,8 +38,20 @@ class HilbertMatrix(object):
         
         # grab the dict of chrom lengths for this genome
         self.chromdict = pbt.chromsizes(self.genome)
-        # grab the length of the requested genome
-        self.chrom_length = self.chromdict[self.chrom][1]
+        
+        if self.chrom != "genome":
+            # grab the length of the requested genome
+            self.chrom_length = self.chromdict[self.chrom][1]
+        else:
+            # using the entire genome for our coordinate system
+            self.chrom_length = 0
+            curr_offset = 0
+            self.chrom_offsets = {}
+            for chrom in self.chromdict:
+                self.chrom_offsets[chrom] = curr_offset
+                self.chrom_length += self.chromdict[chrom][1]
+                curr_offset += self.chromdict[chrom][1]
+    
         self.m_dim = matrix_dim
         self.cells = self.m_dim * self.m_dim
         self.norm_factor = int(self.chrom_length / self.cells)
@@ -88,11 +101,19 @@ class HilbertMatrix(object):
         for ivl in ivls:
             self.num_intervals += 1
             self.total_interval_length += ivl.end - ivl.start
+            
+            start = ivl.start
+            end = ivl.end
+            if self.chrom == "genome":
+                offset = self.chrom_offsets[ivl.chrom]
+                start = ivl.start + offset
+                end   = ivl.end + offset
+                
             # figure out what cell the start and end coords
             # of the interval belong in.
             # most of the time, the interval will fit in a single cell
-            start_dist = int(ivl.start / self.norm_factor)
-            end_dist   = int(ivl.end / self.norm_factor)
+            start_dist = int(start / self.norm_factor)
+            end_dist   = int(end / self.norm_factor)
             
             # however, we must populate EVERY cell that the 
             # interval spans.
