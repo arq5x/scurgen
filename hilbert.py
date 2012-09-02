@@ -1,5 +1,6 @@
 import numpy as np
 import pybedtools as pbt
+import sys
 import matplotlib
 from pybedtools import genome_registry
 
@@ -51,21 +52,39 @@ class HilbertMatrix(object):
         x = coords[0]
         y = coords[1]
         self.matrix[x][y] += increment
+        
+    def _get_intervals(self):
+        if not self.file.endswith('.bam'):
+            return pbt.BedTool(self.file)
+        else:
+            # if we have a BAM file, we need to convert to
+            # BEDGRAPH and force the use of the SCORE column
+            # for incrementing the matrx
+            sys.exit("BAM support not implemented. Email: arq5x@virginia.edu")
+            # TO DO
+            #   use pysam to extract reads from proper chrom
+            #   and write code to convert to BEDGRAPH.
+            #   save the BEDGRAPH to file and use PBT
+            #   to create a BedTool for iterating
+            self.incr_column = 4
+            # tmp = pybedtools.BedTool(self.file)
+            # return tmp.genome_coverage(bg=True)
     
     def build(self):
-    
-        # must compute a distance from the 
-        # origing of the hilbert matrix start (0,0.
-        # to do so, we create a normalization factor which
-        # is the length of the chrom divided by the number
-        # of cells in the matrix (d^2). then, each coordinate
-        # "normalized by this constant to compute it's distance.
-        # this distance is then converted to an x,y coordinate
-        # in the matrix using d2xy
-        
+        """
+        must compute a distance from the 
+        origing of the hilbert matrix start (0,0.
+        to do so, we create a normalization factor which
+        is the length of the chrom divided by the number
+        of cells in the matrix (d^2). then, each coordinate
+        "normalized by this constant to compute it's distance.
+        this distance is then converted to an x,y coordinate
+        in the matrix using d2xy
+        """
         # initialize the matrix
         self.matrix = np.zeros((self.m_dim,self.m_dim), dtype=np.float)
-        for ivl in pbt.BedTool(self.file):
+        ivls = self._get_intervals()
+        for ivl in ivls:
         
             start_dist = int(ivl.start / self.norm_factor)
             end_dist   = int(ivl.end / self.norm_factor)
