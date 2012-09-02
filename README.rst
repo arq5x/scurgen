@@ -45,7 +45,8 @@ as the score column (4th col.) in BEDGRAPH files::
 
 Full help::
 
-	python scurgen.py plot --helpusage: scurgeon plot [-h] [--genome GENOME] [--chrom CHROM]
+	python scurgen.py plot --help
+	usage: scurgeon plot [-h] [--genome GENOME] [--chrom CHROM]
 	                     [--inc_col INC_COL] [--dim MATRIXDIM] [--color COLORMAP]
 	                     [--format FORMAT] [--dpi DPI]
 	                     file
