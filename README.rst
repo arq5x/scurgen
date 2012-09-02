@@ -4,7 +4,7 @@ Overview
 curves such as the Hilbert Curve.
 
 .. WARNING::
-   This project is in its infancy.  Documenation is sparse, functionality is 
+   This project is in its infancy.  Documentation is sparse, functionality is 
    evolving, and installation/dependencies are not documented.  
 
    
