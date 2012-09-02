@@ -30,7 +30,7 @@ other genomes are allowed::
 	python scurgen.py plot  --chrom chr10 \
 	                        --color Greens \
 	                        --format png \
-                            --genome mm9 \
+	                        --genome mm9 \
 	                        data/cpg-islands.hg19.chr10.bed
 							
 
@@ -40,7 +40,7 @@ as the score column (4th col.) in BEDGRAPH files::
 	python scurgen.py plot  --chrom chr10 \
 	                        --color Greens \
 	                        --format png \
-                            --inc_column 4 \
+	                        --inc_column 4 \
 	                        my.bedgraph
 
 Full help::
