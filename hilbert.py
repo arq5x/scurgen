@@ -43,7 +43,8 @@ class HilbertMatrix(object):
         self.cells = self.m_dim * self.m_dim
         self.norm_factor = int(self.chrom_length / self.cells)
         self.incr_column = incr_column
-        
+        self.num_intervals = 0
+        self.total_interval_length = 0
         chromdict = pbt.chromsizes(genome)
         # populate the matrix with the data contained in self.file
         self.build()
@@ -85,7 +86,8 @@ class HilbertMatrix(object):
         self.matrix = np.zeros((self.m_dim,self.m_dim), dtype=np.float)
         ivls = self._get_intervals()
         for ivl in ivls:
-        
+            self.num_intervals += 1
+            self.total_interval_length += ivl.end - ivl.start
             # figure out what cell the start and end coords
             # of the interval belong in.
             # most of the time, the interval will fit in a single cell
@@ -108,3 +110,9 @@ class HilbertMatrix(object):
             for c in range(cols):
                 if self.matrix[r][c] == 0:
                     self.matrix[r][c] = np.NaN
+                    
+    def norm_by_total_intervals(self):
+        rows, cols = self.matrix.shape
+        for r in range(rows):
+            for c in range(cols):
+                self.matrix[r][c] /= self.num_intervals
