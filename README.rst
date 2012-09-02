@@ -40,7 +40,7 @@ Voila:
 Now, when one combines the two, one can see the co-localization (or lack of)
 of the two sets in the genome.  The following image was merged manually with
 image software, but I am working on dependable methods for doing this
-progtammatically:
+programmatically:
 
 	.. image:: https://raw.github.com/arq5x/scurgen/master/merge.png
 	
