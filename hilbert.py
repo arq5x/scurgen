@@ -33,12 +33,18 @@ class HilbertMatrix(object):
         self.file = file
         self.genome = genome
         self.chrom = chrom
-        self.chrom_length = 135534747
+        
+        # grab the dict of chrom lengths for this genome
+        self.chromdict = pbt.chromsizes(self.genome)
+        # grab the length of the requested genome
+        self.chrom_length = self.chromdict[self.chrom][1]
         self.m_dim = matrix_dim
         self.cells = self.m_dim * self.m_dim
         self.norm_factor = int(self.chrom_length / self.cells)
         self.incr_column = incr_column
-
+        
+        chromdict = pbt.chromsizes(genome)
+        # populate the matrix with the data contained in self.file
         self.build()
 
     def _update_matrix(self, coords, increment=1):
