@@ -86,9 +86,14 @@ class HilbertMatrix(object):
         ivls = self._get_intervals()
         for ivl in ivls:
         
+            # figure out what cell the start and end coords
+            # of the interval belong in.
+            # most of the time, the interval will fit in a single cell
             start_dist = int(ivl.start / self.norm_factor)
             end_dist   = int(ivl.end / self.norm_factor)
-
+            
+            # however, we must populate EVERY cell that the 
+            # interval spans.
             for dist in xrange(start_dist, end_dist + 1):
                 coords = d2xy(self.m_dim, dist)
                 if self.incr_column:
