@@ -5,13 +5,14 @@ import  matplotlib.pyplot as plt
 from matplotlib import cm as cm
 import matplotlib.colors as colors
 from pylab import *
-import Image
+from PIL import Image
 import argparse
 import hilbert as hb
 
 
 def plot(parser, args):
-    hm = hb.HilbertMatrix(args.file, args.genome, args.chrom, args.dim)
+    hm = hb.HilbertMatrix(args.file, args.genome, args.chrom, args.dim,
+                          args.inc_col)
     hm.mask_low_values(args.min_mask)
     cmap = cm.get_cmap(args.cmap, 5)
     
@@ -37,26 +38,19 @@ def combine(parser, args):
     cmap1 = cm.get_cmap(args.cmap1, 5)
     cmap2 = cm.get_cmap(args.cmap2, 5)
     
-    cmap1._init()
-    cmap2._init() # create the _lut array, with rgba values
-    
-    # create your alpha array and fill the colormap with them.
-    # here it is progressive, but you can create whathever you want
-    #alphas = np.linspace(0, 0.9, cmap2.N+3)
-    cmap1._lut[:,-1] = [0.5] * (cmap1.N+3)
-    cmap2._lut[:,-1] = [0.5] * (cmap2.N+3)
+
     
     cmap1.set_bad('w')
     cmap2.set_bad('w')
     
     # build fig1
     fig = plt.figure()
-
     hilb1 = plt.imshow(hm1.matrix, interpolation='nearest', cmap=cmap1)
     fig.savefig("_a.png", dpi=args.dpi, transparent=True)
     
     # build fig2
     fig = plt.figure()
+
     hilb2 = plt.imshow(hm2.matrix, interpolation='nearest', cmap=cmap2)
     fig.savefig("_b.png", dpi=args.dpi, transparent=True)
     
@@ -64,11 +58,14 @@ def combine(parser, args):
     background = Image.open("_a.png")
     foreground = Image.open("_b.png")
     
-    #composite = Image.blend(background, foreground, 0.5)
+    foreground.load()
+    background.load()
     
-    background.paste(foreground, (0, 0), foreground)
-    #background.show()
-
+    (r, g, b, a) = foreground.split()
+    foreground = Image.merge("RGB", (r, g, b))
+    mask = Image.merge("L", (a,))
+    background.paste(foreground, (0, 0), mask)
+    #background.paste(foreground, (0, 0), foreground)
     background.save("merge.png")
 
 
@@ -98,7 +95,8 @@ def main():
                                 metavar='INC_COL', 
                                 help='Use a specific column for incrementing \
                                       file.',
-                                default=-1)
+                                type=int,
+                                default=None)
 
     parser_plot.add_argument('--dim', dest='dim', metavar='INTEGER', 
                         help='The dimensions of the curve.  A power of 2.',

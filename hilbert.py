@@ -33,7 +33,7 @@ def d2xy(n, d):
 
 class HilbertMatrix(object):
     
-    def __init__(self, file, genome, chrom, matrix_dim, incr_column=-1):
+    def __init__(self, file, genome, chrom, matrix_dim, incr_column=None):
         self.file = file
         self.genome = genome
         self.chrom = chrom
@@ -144,11 +144,11 @@ class HilbertMatrix(object):
             # interval spans.
             for dist in xrange(start_dist, end_dist + 1):
                 coords = d2xy(self.m_dim, dist)
-                if self.incr_column:
+                if self.incr_column is None:
                     self._update_matrix(coords)
                 else:
                     self._update_matrix(coords, \
-                        increment=float(ivl[self.incr_column]))
+                        increment=float(ivl[self.incr_column - 1]))
         self._cleanup()
         
     def mask_low_values(self, min_val = 0):
