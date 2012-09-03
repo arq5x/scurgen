@@ -1,9 +1,11 @@
 import numpy as np
 import pybedtools as pbt
 import sys
+import os
 import matplotlib
+import subprocess
 from pybedtools import genome_registry
-
+    
 def rot(n, x, y, rx, ry):
     if (ry == 0):
         if (rx == 1):
@@ -59,8 +61,14 @@ class HilbertMatrix(object):
         self.num_intervals = 0
         self.total_interval_length = 0
         chromdict = pbt.chromsizes(genome)
+        self.temp_files = []
+
         # populate the matrix with the data contained in self.file
         self.build()
+
+    def _cleanup(self):
+        for temp_file in self.temp_files:
+            os.remove(temp_file)
 
     def _update_matrix(self, coords, increment=1):
         x = coords[0]
@@ -73,16 +81,33 @@ class HilbertMatrix(object):
         else:
             # if we have a BAM file, we need to convert to
             # BEDGRAPH and force the use of the SCORE column
-            # for incrementing the matrx
-            sys.exit("BAM support not implemented. Email: arq5x@virginia.edu")
-            # TO DO
-            #   use pysam to extract reads from proper chrom
-            #   and write code to convert to BEDGRAPH.
-            #   save the BEDGRAPH to file and use PBT
-            #   to create a BedTool for iterating
+            # for incrementing the matrix
+            bedg_filename = "." + self.file + ".bedg"
+            bedg = open(bedg_filename, 'w')
+            
+            # use bedtools genomecov to create a BEDGRAPH
+            # of the BAM file's coverage
+            if self.chrom != "genome":
+                cmd = "samtools view -b %s %s | \
+                              bedtools genomecov -ibam - -bg" \
+                              % (self.file, self.chrom)
+            else:
+                cmd = "bedtools genomecov -ibam %s -bg" % (self.file)
+            
+            # save the BEDGRAPH to a file for the Hilbert Curve
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            while True:
+                line = proc.stdout.readline()
+                if line != '':
+                    bedg.write(line)
+                else:
+                    break
+            bedg.close()
+            
+            # it's BEDGRAPH, so use the 4th column for the matrix cells
             self.incr_column = 4
-            # tmp = pybedtools.BedTool(self.file)
-            # return tmp.genome_coverage(bg=True)
+            self.temp_files.append(bedg_filename)
+            return pbt.BedTool(bedg_filename)
     
     def build(self):
         """
@@ -124,7 +149,8 @@ class HilbertMatrix(object):
                 else:
                     self._update_matrix(coords, \
                         increment=float(ivl[self.incr_column]))
-                        
+        self._cleanup()
+        
     def mask_low_values(self, min_val = 0):
         rows, cols = self.matrix.shape
         for r in range(rows):
