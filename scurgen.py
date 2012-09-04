@@ -14,13 +14,15 @@ def plot(parser, args):
     hm = hb.HilbertMatrix(args.file, args.genome, args.chrom, args.dim,
                           args.inc_col)
     hm.mask_low_values(args.min_mask)
-    cmap = cm.get_cmap(args.cmap, 5)
+    cmap = cm.get_cmap(args.cmap, 12)
     
     fig = plt.figure()
     hilbert = plt.imshow(hm.matrix, interpolation='nearest', cmap=cmap)
+    plt.colorbar()
     
     out_file = args.file + "." + args.format
     fig.savefig(out_file, dpi=args.dpi, transparent=True)
+    
     plt.show()
 
 
