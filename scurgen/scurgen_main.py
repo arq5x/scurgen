@@ -6,7 +6,7 @@ import  matplotlib.pyplot as plt
 from matplotlib import cm as cm
 import matplotlib.colors as colors
 from pylab import *
-from PIL import Image
+import Image
 import argparse
 import hilbert as hb
 
