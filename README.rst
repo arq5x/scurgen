@@ -27,7 +27,7 @@ yields a PNG image named cpg-islands.hg19.chr10.bed.png:
 And let's do the same with 5' UTRs.::
 
 	python scurgen.py plot  --chrom chr10 \
-	                        --cmap Greens \
+	                        --cmap Blues \
 	                        --format png \
 	                        --dim 128 \
 	                        data/refseq.chr10.exons.bed
