@@ -14,7 +14,7 @@ The plot module
 This module allows you to make a basic plot of genomic data using a Hilbert 
 curve.::
 
-	python scurgen.py plot  --chrom chr10 \
+	scurgen plot  --chrom chr10 \
 	                        --cmap Greens \
 	                        --format png \
 	                        --dim 128 \
@@ -26,7 +26,7 @@ yields a PNG image named cpg-islands.hg19.chr10.bed.png:
 
 And let's do the same with 5' UTRs.::
 
-	python scurgen.py plot  --chrom chr10 \
+	scurgen plot  --chrom chr10 \
 	                        --cmap Blues \
 	                        --format png \
 	                        --dim 128 \
@@ -48,7 +48,7 @@ programmatically:
 By default, we assume the chromosomes are humand (build 37 or hg19).  However, 
 other genomes are allowed::
 
-	python scurgen.py plot  --chrom chr10 \
+	scurgen plot  --chrom chr10 \
 	                        --cmap Greens \
 	                        --format png \
 	                        --genome mm9 \
@@ -64,7 +64,7 @@ such as BEDGRAPH to increment the scores associated with each cell in
 the curve matrix.  Here is an example of using the pValue column from
 an ENCODE narrow peak (http://genome.ucsc.edu/FAQ/FAQformat#format12) file::
 
-	python scurgen.py plot  --chrom chr10 \
+	scurgen plot  --chrom chr10 \
 	                        --cmap Reds \
 	                        --format png \
 	                        --dim 512 \
@@ -79,7 +79,7 @@ yielding:
 Full help for plot module
 -------------------------
 
-	python scurgen.py plot --help
+	scurgen plot --help
 	usage: scurgen plot [-h] [--genome STRING] [--chrom STRING]
 	                    [--inc_col INC_COL] [--dim INTEGER] [--min_mask INTEGER]
 	                    [--cmap STRING] [--format STRING] [--dpi INTEGER]
