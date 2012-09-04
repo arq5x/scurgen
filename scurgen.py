@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import  matplotlib.pyplot as plt
 from matplotlib import cm as cm
 import matplotlib.colors as colors
@@ -69,7 +70,10 @@ def combine(parser, args):
     background.paste(foreground, (0, 0), mask)
     #background.paste(foreground, (0, 0), foreground)
     background.save("merge.png")
-
+    
+    # cleanup temp files
+    os.remove("_a.png")
+    os.remove("_b.png")
 
 
 def main():
