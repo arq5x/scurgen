@@ -1,7 +1,7 @@
 Overview
 --------
-`scurgen` is a command line tool for plotting genomic data using scpace-filling
-curves such as the Hilbert Curve.
+`scurgen` (/skur'jən/) is a command line tool for plotting genomic data 
+using scpace-filling curves such as the Hilbert Curve.
 
 .. WARNING::
    This project is in its infancy.  Documentation is sparse, functionality is 
