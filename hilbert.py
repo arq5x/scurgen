@@ -148,7 +148,7 @@ class HilbertMatrix(object):
                     self._update_matrix(coords)
                 else:
                     self._update_matrix(coords, \
-                        increment=float(ivl[self.incr_column - 1]))
+                        increment=float(ivl[self.incr_column]))
         self._cleanup()
         
     def mask_low_values(self, min_val = 0):
