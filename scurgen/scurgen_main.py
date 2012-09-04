@@ -13,7 +13,7 @@ import hilbert as hb
 
 def plot(parser, args):
     hm = hb.HilbertMatrix(args.file, args.genome, args.chrom, args.dim,
-                          args.inc_col - 1)
+                          args.inc_col)
     hm.mask_low_values(args.min_mask)
     cmap = cm.get_cmap(args.cmap, 12)
     
@@ -29,9 +29,9 @@ def plot(parser, args):
 
 def combine(parser, args):
     hm1 = hb.HilbertMatrix(args.file1, args.genome, args.chrom, args.dim, \
-                           args.inc_col1 - 1)
+                           args.inc_col1)
     hm2 = hb.HilbertMatrix(args.file2, args.genome, args.chrom, args.dim, \
-                           args.inc_col2 - 1)
+                           args.inc_col2)
                            
     hm1.mask_low_values()
     hm2.mask_low_values()

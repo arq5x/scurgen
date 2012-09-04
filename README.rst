@@ -75,6 +75,7 @@ yielding:
 
 	.. image:: https://raw.github.com/arq5x/scurgen/master/wgEncodeSydhTfbsGm12878Nrf1IggmusPk.narrowPeak.png 
 
+
 Full help for plot module
 -------------------------
 
