@@ -55,16 +55,28 @@ other genomes are allowed::
 	                        data/cpg-islands.hg19.chr10.bed
 							
 
-By default, we count each interval the same.  However, we can use weights such
-as the score column (4th col.) in BEDGRAPH files::
+Support for quantitative data
+-----------------------------
+In the case of quantitative experiments such a ChIP-seq, we often have
+quantitative values associated with genomic intervals (e.g., "peaks").
+The `inc-col` option allows one to use a specific column in a text file
+such as BEDGRAPH to increment the scores associated with each cell in 
+the curve matrix.  Here is an example of using the pValue column from
+an ENCODE narrow peak (http://genome.ucsc.edu/FAQ/FAQformat#format12) file::
 
 	python scurgen.py plot  --chrom chr10 \
-	                        --cmap Greens \
+	                        --cmap Reds \
 	                        --format png \
-	                        --inc_column 4 \
-	                        my.bedgraph
+	                        --dim 512 \
+	                        --inc_col 8 \
+	                        data/wgEncodeSydhTfbsGm12878Nrf1IggmusPk.narrowPeak
+	
+yielding:
 
-Full help::
+	.. image:: https://raw.github.com/arq5x/scurgen/master/wgEncodeSydhTfbsGm12878Nrf1IggmusPk.narrowPeak.png 
+
+Full help for plot module
+-------------------------
 
 	python scurgen.py plot --help
 	usage: scurgen plot [-h] [--genome STRING] [--chrom STRING]
