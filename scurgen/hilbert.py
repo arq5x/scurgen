@@ -44,6 +44,7 @@ class HilbertMatrix(object):
         if self.chrom != "genome":
             # grab the length of the requested genome
             self.chrom_length = self.chromdict[self.chrom][1]
+            print self.chrom_length
         else:
             # using the entire genome for our coordinate system
             self.chrom_length = 0
@@ -129,10 +130,14 @@ class HilbertMatrix(object):
             
             start = ivl.start
             end = ivl.end
-            if self.chrom == "genome":
+            if not self.chrom == "genome":
+                if ivl.chrom != self.chrom:
+                    continue
+            else:
                 offset = self.chrom_offsets[ivl.chrom]
                 start = ivl.start + offset
                 end   = ivl.end + offset
+            
                 
             # figure out what cell the start and end coords
             # of the interval belong in.
