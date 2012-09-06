@@ -44,6 +44,7 @@ class HilbertMatrix(object):
         if self.chrom != "genome":
             # grab the length of the requested genome
             self.chrom_length = self.chromdict[self.chrom][1]
+            print self.chrom, "size: ", 
         else:
             # using the entire genome for our coordinate system
             self.chrom_length = 0
@@ -53,10 +54,17 @@ class HilbertMatrix(object):
                 self.chrom_offsets[chrom] = curr_offset
                 self.chrom_length += self.chromdict[chrom][1]
                 curr_offset += self.chromdict[chrom][1]
-    
+            print "genome size: ",
+        print self.chrom_length
+        
         self.m_dim = matrix_dim
         self.cells = self.m_dim * self.m_dim
         self.norm_factor = int(self.chrom_length / self.cells)
+        
+        print "using matrix of size", self.m_dim, "there are", \
+              self.cells, "cells in the matrix and each cell represents", \
+              self.norm_factor, "base pairs."
+        
         self.incr_column = incr_column
         self.num_intervals = 0
         self.total_interval_length = 0
