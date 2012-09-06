@@ -24,7 +24,8 @@ def plot(parser, args):
     out_file = args.file + "." + args.format
     fig.savefig(out_file, dpi=args.dpi, transparent=True)
     
-    plt.show()
+    if not args.no_show:
+        plt.show()
 
 
 def combine(parser, args):
@@ -129,7 +130,13 @@ def main():
                         help='The resolution (in DPI) of the output.',
                         type=int,
                         default=150)
-    
+                        
+    parser_plot.add_argument('--non_inter', 
+                                    dest='no_show', 
+                                    action='store_true',
+                                    help='Do not display interactive window.', 
+                                    default=False)
+                                    
     parser_plot.set_defaults(func=plot)
     
     #########################################
