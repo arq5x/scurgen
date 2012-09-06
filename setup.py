@@ -20,7 +20,7 @@ long_description = """
 setup(
         name="scurgen",
         version=version,
-        install_requires=['numpy>=1.6.0', 'pybedtools>=0.6.1', 
+        install_requires=['numpy', 'pybedtools>=0.6.1', 
                           'matplotlib>=1.0.0', 'PIL>=1.1.7'],
         requires = ['python (>=2.5, <3.0)'],
         packages=['scurgen',
