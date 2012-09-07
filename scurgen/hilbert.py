@@ -32,6 +32,9 @@ def xy2d(n, x, y):
 
 
 def d2xy(n, d):
+    """
+    Convert a distance into (x,y) coords of the matrix of dimension `n`
+    """
     t = d
     x = y = 0
 
@@ -47,7 +50,95 @@ def d2xy(n, d):
     return (x, y)
 
 
-class HilbertMatrix(object):
+class HilbertBase(object):
+    def __init__(self, m_dim):
+        """
+        Initializes a basic Hilbert curve.
+
+        :param m_dim:
+            The number of dimensions on a side (power of 2)
+        """
+        if np.log2(m_dim) % 1 != 0:
+            raise ValueError('m_dim %s not a power of 2' % m_dim)
+        self.m_dim = m_dim
+        self.ncells = m_dim * m_dim
+        self.matrix = np.zeros((self.m_dim, self.m_dim), dtype=np.float)
+
+    def update(self, d1, d2, value=1, func=np.add):
+        """
+        Update the matrix between cells `d1` and `d2` (inclusive) by `value`.
+
+        :param d1:
+            First cell to update
+
+        :param d2:
+            Last cell to update
+
+        :param value:
+            Value to update by
+
+        :param func:
+            Optional arbitrary function that returns a float.  It should have
+            the signature::
+
+                func(existing_value, value)
+
+            By default, func=np.add, so the cells will be simply incremented by
+            `value`.
+        """
+        for dist in xrange(d1, d2 + 1):
+            x, y = d2xy(self.m_dim, dist)
+            self.matrix[x, y] = func(self.matrix[x, y], value)
+
+    def curve(self):
+        """
+        Returns a 3-tuple of the x-coords, y-coords, and labels for the curve.
+        The curve is rotated such that (0,0) is in the upper left and (-1,-1)
+        is in the lower left in order to be consistent with matplotlib's
+        imshow() default axes origin.
+        """
+        xs, ys = [], []
+        for i in range(self.ncells):
+            x, y = d2xy(self.m_dim, i)
+            xi = y
+            yi = self.m_dim - x - 1
+            xs.append(xi)
+            ys.append(yi)
+        return np.array(xs), np.array(ys), range(self.ncells)[::-1]
+
+
+class HilbertNormalized(HilbertBase):
+    def __init__(self, m_dim, length):
+        """
+        Hilbert curve class that handles distance in arbitrary units (e.g.,
+        genomic bp) instead of in cell numbers.
+
+        :param m_dim:
+            The number of dimensions on a side (power of 2)
+
+        :param length:
+            The total length represented by this curve
+        """
+        super(HilbertNormalized, self).__init__(m_dim)
+        self.length = length
+        if self.ncells >= length:
+            raise ValueError("too many cells for this length")
+        self.norm_factor = self.length / self.ncells
+
+    def _normalize(self, d):
+        """
+        Convert distance from bp to cell number
+        """
+        return int(d / self.norm_factor)
+
+    def update(self, d1, d2, value=1, func=np.add, cells=False):
+        if not cells:
+            d1 = self._normalize(d1)
+            d2 = self._normalize(d2)
+        super(HilbertNormalized, self).update(d1, d2, value, func)
+
+
+class HilbertMatrix(HilbertNormalized):
     def __init__(self, file, genome, chrom, matrix_dim, incr_column=None):
         self.file = file
         self.genome = genome
@@ -57,7 +148,7 @@ class HilbertMatrix(object):
         self.chromdict = pbt.chromsizes(self.genome)
 
         if self.chrom != "genome":
-            # grab the length of the requested genome
+            # grab the length of the requested chromosome
             self.chrom_length = self.chromdict[self.chrom][1]
         else:
             # using the entire genome for our coordinate system
@@ -69,14 +160,13 @@ class HilbertMatrix(object):
                 self.chrom_length += self.chromdict[chrom][1]
                 curr_offset += self.chromdict[chrom][1]
 
-        self.m_dim = matrix_dim
-        self.cells = self.m_dim * self.m_dim
-        self.norm_factor = int(self.chrom_length / self.cells)
         self.incr_column = incr_column
         self.num_intervals = 0
         self.total_interval_length = 0
         chromdict = pbt.chromsizes(genome)
         self.temp_files = []
+
+        super(HilbertMatrix, self).__init__(matrix_dim, self.chrom_length)
 
         # populate the matrix with the data contained in self.file
         self.build()
@@ -84,11 +174,6 @@ class HilbertMatrix(object):
     def _cleanup(self):
         for temp_file in self.temp_files:
             os.remove(temp_file)
-
-    def _update_matrix(self, coords, increment=1):
-        x = coords[0]
-        y = coords[1]
-        self.matrix[x][y] += increment
 
     def _get_intervals(self):
         if not self.file.endswith('.bam'):
@@ -135,36 +220,24 @@ class HilbertMatrix(object):
         this distance is then converted to an x,y coordinate
         in the matrix using d2xy
         """
-        # initialize the matrix
-        self.matrix = np.zeros((self.m_dim, self.m_dim), dtype=np.float)
         ivls = self._get_intervals()
         for ivl in ivls:
             self.num_intervals += 1
             self.total_interval_length += ivl.end - ivl.start
-
             start = ivl.start
             end = ivl.end
-            if self.chrom == "genome":
+            if not self.chrom == "genome":
+                if ivl.chrom != self.chrom:
+                    continue
+            else:
                 offset = self.chrom_offsets[ivl.chrom]
                 start = ivl.start + offset
                 end = ivl.end + offset
-
-            # figure out what cell the start and end coords
-            # of the interval belong in.
-            # most of the time, the interval will fit in a single cell
-            start_dist = int(start / self.norm_factor)
-            end_dist = int(end / self.norm_factor)
-
-            # however, we must populate EVERY cell that the
-            # interval spans.
-            for dist in xrange(start_dist, end_dist + 1):
-                coords = d2xy(self.m_dim, dist)
-                if self.incr_column is None:
-                    self._update_matrix(coords)
-                else:
-                    self._update_matrix(
-                        coords,
-                        increment=float(ivl[self.incr_column - 1]))
+            if self.incr_column is None:
+                value = 1
+            else:
+                value = float(ivl[self.incr_column - 1])
+            self.update(start, end, value=value)
         self._cleanup()
 
     def mask_low_values(self, min_val=0):
