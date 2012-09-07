@@ -93,9 +93,14 @@ class HilbertBase(object):
     def curve(self):
         """
         Returns a 3-tuple of the x-coords, y-coords, and labels for the curve.
-        The curve is rotated such that (0,0) is in the upper left and (-1,-1)
-        is in the lower left in order to be consistent with matplotlib's
-        imshow() default axes origin.
+        The (x, y) coords correspond to (col, row) positions in a matrix such
+        that that the following will work::
+
+            x, y, labels = x.curve()
+            plt.imshow(x.matrix)
+            plt.plot(x, y)
+
+        In this case the (x, y) coords fall within the center of each cell.
         """
         xs, ys = [], []
         for i in range(self.ncells):
