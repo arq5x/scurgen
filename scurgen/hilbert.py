@@ -125,7 +125,7 @@ class HilbertNormalized(HilbertBase):
             raise ValueError("too many cells for this length")
         self.norm_factor = self.length / self.ncells
 
-    def _normalize(self, d):
+    def normalize(self, d):
         """
         Convert distance from bp to cell number
         """
@@ -133,8 +133,8 @@ class HilbertNormalized(HilbertBase):
 
     def update(self, d1, d2, value=1, func=np.add, cells=False):
         if not cells:
-            d1 = self._normalize(d1)
-            d2 = self._normalize(d2)
+            d1 = self.normalize(d1)
+            d2 = self.normalize(d2)
         super(HilbertNormalized, self).update(d1, d2, value, func)
 
 
