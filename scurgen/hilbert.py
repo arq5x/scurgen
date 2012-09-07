@@ -102,6 +102,8 @@ class HilbertBase(object):
 
         In this case the (x, y) coords fall within the center of each cell.
         """
+        # Note: there's probably some more elegant way to do this but this
+        # seems to work...
         xs, ys = [], []
         for i in range(self.ncells):
             x, y = d2xy(self.m_dim, i)
@@ -109,7 +111,10 @@ class HilbertBase(object):
             yi = self.m_dim - x - 1
             xs.append(xi)
             ys.append(yi)
-        return np.array(xs), np.array(ys), range(self.ncells)[::-1]
+
+        # Reverse everything
+        return np.array(xs)[::-1], np.array(ys)[::-1], range(self.ncells)
+
 
 
 class HilbertNormalized(HilbertBase):
