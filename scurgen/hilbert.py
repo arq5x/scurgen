@@ -5,7 +5,8 @@ import os
 import matplotlib
 import subprocess
 from pybedtools import genome_registry
-import logging
+
+
 def rot(n, x, y, rx, ry):
     if (ry == 0):
         if (rx == 1):
