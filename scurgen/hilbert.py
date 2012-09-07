@@ -14,6 +14,22 @@ def rot(n, x, y, rx, ry):
         # Swap x and y
         x, y = y, x
     return (x, y)
+
+
+def xy2d(n, x, y):
+    """
+    Convert an (x, y) coordinate into distance
+    """
+    d = 0
+    s = n / 2
+    while s > 0:
+        rx = (x & s) > 0
+        ry = (y & s) > 0
+        d += s * s * ((3 * rx) ^ ry)
+        rot(s, x, y, rx, ry)
+    return d
+
+
 def d2xy(n, d):
     t = d
     x = y = 0
