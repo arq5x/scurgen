@@ -123,7 +123,7 @@ class HilbertNormalized(HilbertBase):
         self.length = length
         if self.ncells >= length:
             raise ValueError("too many cells for this length")
-        self.norm_factor = self.length / self.ncells
+        self.norm_factor = self.length / float(self.ncells)
 
     def normalize(self, d):
         """
