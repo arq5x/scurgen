@@ -132,6 +132,33 @@ class HilbertNormalized(HilbertBase):
         return int(d / self.norm_factor)
 
     def update(self, d1, d2, value=1, func=np.add, cells=False):
+        """
+        Update the matrix between distances `d1` and `d2` (inclusive) by `value`.
+
+        :param d1:
+            Beginning of the distance to update, or, if cells=True, assume `d1`
+            has already been normalized to a cell distance
+
+        :param d2:
+            End of the distance to update, or, if cells=True, assume `d2` has
+            already been normalized to a cell distance
+
+        :param value:
+            Value to update by
+
+        :param func:
+            Optional arbitrary function that returns a float.  It should have
+            the signature::
+
+                func(existing_value, value)
+
+            By default, func=np.add, so the cells will be simply incremented by
+            `value`.
+
+        :param cells:
+            If True, assume that the distances `d1` and `d2` have already been
+            normalized.
+        """
         if not cells:
             d1 = self.normalize(d1)
             d2 = self.normalize(d2)
