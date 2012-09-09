@@ -17,20 +17,6 @@ def rot(n, x, y, rx, ry):
     return (x, y)
 
 
-def xy2d(n, x, y):
-    """
-    Convert an (x, y) coordinate into distance
-    """
-    d = 0
-    s = n / 2
-    while s > 0:
-        rx = (x & s) > 0
-        ry = (y & s) > 0
-        d += s * s * ((3 * rx) ^ ry)
-        rot(s, x, y, rx, ry)
-    return d
-
-
 def d2xy(n, d):
     """
     Convert a distance into (x,y) coords of the matrix of dimension `n`
@@ -49,6 +35,28 @@ def d2xy(n, d):
         s *= 2
     return (x, y)
 
+
+def xy2d(n, x, y):
+    """
+    Convert an (x, y) coordinate into distance
+    """
+    d = 0
+    s = n / 2
+    while s > 0:
+        rx = (x & s) > 0
+        ry = (y & s) > 0
+        d += s * s * ((3 * rx) ^ ry)
+        rot(s, x, y, rx, ry)
+        s /= 2
+    return d
+
+
+class Interval(object):
+
+    def __init__(self, chrom, start, end):
+        self.chrom = chrom
+        self.start = start
+        self.end = end
 
 class HilbertBase(object):
     def __init__(self, m_dim):
@@ -220,6 +228,7 @@ class HilbertMatrix(HilbertNormalized):
 
         # populate the matrix with the data contained in self.file
         self.build()
+        self.dump_matrix()
 
     def _cleanup(self):
         for temp_file in self.temp_files:
@@ -289,6 +298,23 @@ class HilbertMatrix(HilbertNormalized):
                 value = float(ivl[self.incr_column - 1])
             self.update(start, end, value=value)
         self._cleanup()
+
+    def dump_matrix(self):
+        mat_dump = open(self.file + '.mtx', 'w')
+        # header
+        mat_dump.write('\t'.join(['row', 'col', 'value', 'chrom',
+                                  'start', 'end',]) + '\n')
+        start = 0
+        for r in xrange(self.m_dim):
+            for c in xrange(self.m_dim):
+                d = xy2d(self.m_dim, r, c)
+                end = (start + self.norm_factor)
+                mat_dump.write('\t'.join(str(s) for s in [r, c,
+                                         self.matrix[r][c],
+                                         self.chrom, start,
+                                         end]) + '\n')
+                start += self.norm_factor
+        mat_dump.close()
 
     def mask_low_values(self, min_val=0):
         rows, cols = self.matrix.shape
