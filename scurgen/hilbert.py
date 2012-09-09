@@ -138,9 +138,18 @@ class HilbertNormalized(HilbertBase):
         self.length = length
         self.norm_factor = self.length / float(self.ncells)
 
+    @property
+    def dist_per_cell(self):
+        """
+        Returns the distance represented by each cell in the matrix.
+
+        (alias for self.norm_factor)
+        """
+        return self.norm_factor
+
     def normalize(self, d):
         """
-        Convert distance from bp to cell number
+        Convert distance from bp to number of cells.
         """
         return int(d / self.norm_factor)
 
