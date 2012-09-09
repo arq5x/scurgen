@@ -1,3 +1,4 @@
+import numpy as np
 from scurgen import hilbert
 from scurgen.plotting import debug_plot
 from nose.tools import assert_raises
@@ -28,6 +29,24 @@ def test_invariant_normalize():
     # Test support for small lengths
     h = hilbert.HilbertNormalized(16, length=0.5)
     assert h.normalize(h.length) == h.ncells
+
+
+def test_normalize():
+    h = hilbert.HilbertNormalized(16, length=16 * 16)
+    assert h.norm_factor == 1
+    assert h.normalize(1) == 1
+
+    # This one should behave identically to HilbertBase of the same size
+    hb = hilbert.HilbertBase(16)
+    h.update(0, 3)
+    hb.update(0, 3)
+    assert np.all(hb.matrix == h.matrix)
+
+    # cells are now half the size
+    h = hilbert.HilbertNormalized(16, length=0.5 * 16 * 16)
+    assert h.norm_factor == 0.5
+    assert h.normalize(0.5) == 1
+    assert h.normalize(1) == 2
 
 
 def test_cell_fill():
