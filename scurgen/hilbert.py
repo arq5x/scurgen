@@ -116,7 +116,6 @@ class HilbertBase(object):
         return np.array(xs)[::-1], np.array(ys)[::-1], range(self.ncells)
 
 
-
 class HilbertNormalized(HilbertBase):
     def __init__(self, m_dim, length):
         """
@@ -131,8 +130,6 @@ class HilbertNormalized(HilbertBase):
         """
         super(HilbertNormalized, self).__init__(m_dim)
         self.length = length
-        if self.ncells >= length:
-            raise ValueError("too many cells for this length")
         self.norm_factor = self.length / float(self.ncells)
 
     def normalize(self, d):
@@ -143,7 +140,8 @@ class HilbertNormalized(HilbertBase):
 
     def update(self, d1, d2, value=1, func=np.add, cells=False):
         """
-        Update the matrix between distances `d1` and `d2` (inclusive) by `value`.
+        Update the matrix between distances `d1` and `d2` (inclusive) by
+        `value`.
 
         :param d1:
             Beginning of the distance to update, or, if cells=True, assume `d1`

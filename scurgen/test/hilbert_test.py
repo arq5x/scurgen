@@ -25,6 +25,10 @@ def test_invariant_normalize():
     # to get this to pass
     assert h.normalize(h.length) == h.ncells
 
+    # Test support for small lengths
+    h = hilbert.HilbertNormalized(16, length=0.5)
+    assert h.normalize(h.length) == h.ncells
+
 
 def test_cell_fill():
     h = hilbert.HilbertBase(16)
