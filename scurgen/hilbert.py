@@ -90,6 +90,12 @@ class HilbertBase(object):
             x, y = d2xy(self.m_dim, dist)
             self.matrix[x, y] = func(self.matrix[x, y], value)
 
+    def reset(self):
+        """
+        Resets the matrix to zeros everywhere
+        """
+        self.matrix[:] = 0.0
+
     def curve(self):
         """
         Returns a 3-tuple of the x-coords, y-coords, and labels for the curve.
