@@ -50,6 +50,10 @@ def test_normalize():
 
 
 def test_cell_fill():
+    """
+    makes sure the right (rows, cols) get filled as expected when using cells
+    as distance
+    """
     h = hilbert.HilbertBase(16)
 
     # append 1 to the first cell
@@ -81,3 +85,35 @@ def test_cell_fill():
 
     # everything from before should have been set back to zero
     assert h.matrix.sum() == 99
+
+
+def test_norm_dist_fill():
+    """
+    make sure the right (rows, cols) get filled when using distance rather than
+    cell count
+    """
+    # test a variety of lengths
+    lengths = [0.5, 1, 16, 1000]
+    cells_to_fill = 3
+    for length in lengths:
+        h = hilbert.HilbertNormalized(16, length)
+
+        # minus 1 because in the h.update() below, the start, 0, counts as the
+        # first
+        dist_to_fill = (cells_to_fill - 1) * h.dist_per_cell
+
+        h.update(0, dist_to_fill)
+
+        assert h.matrix[0, 0] == 1
+        assert h.matrix[1, 0] == 1
+        assert h.matrix[1, 1] == 1
+        assert h.matrix.sum() == 3
+
+        h.reset()
+
+        h.update(1 * h.dist_per_cell, dist_to_fill)
+
+        assert h.matrix[0, 0] == 0
+        assert h.matrix[1, 0] == 1
+        assert h.matrix[1, 1] == 1
+        assert h.matrix.sum() == 2
