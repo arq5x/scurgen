@@ -352,9 +352,8 @@ class HilbertMatrix(HilbertNormalized):
     def dump_matrix(self):
         
         mat_dump = open(self.file + ".mtx", 'w')
-        # header
-        mat_dump.write('\t'.join(['row', 'col', 'value', 'chrom',
-                                  'start', 'end']) + '\n')
+        # header indicates the dimension of the matrix
+        mat_dump.write(str(self.m_dim) + '\n')
         for r in xrange(self.m_dim):
             for c in xrange(self.m_dim):
                 (chrom, start, end) = self.get_chrom_range(r, c)
