@@ -58,6 +58,7 @@ class Interval(object):
         self.start = start
         self.end = end
 
+
 class HilbertBase(object):
     def __init__(self, m_dim):
         """
@@ -197,7 +198,7 @@ class HilbertNormalized(HilbertBase):
 
 
 class HilbertMatrix(HilbertNormalized):
-    def __init__(self, file, genome, chrom, matrix_dim, incr_column=None):
+    def __init__(self, file, genome, chrom, m_dim, incr_column=None):
         self.file = file
         self.genome = genome
         self.chrom = chrom
@@ -208,7 +209,7 @@ class HilbertMatrix(HilbertNormalized):
         if self.chrom != "genome":
             # grab the length of the requested chromosome
             self.chrom_length = self.chromdict[self.chrom][1]
-            print self.chrom, "size: ", 
+            print self.chrom, "size: ",
         else:
             # using the entire genome for our coordinate system
             self.chrom_length = 0
@@ -220,18 +221,18 @@ class HilbertMatrix(HilbertNormalized):
                 curr_offset += self.chromdict[chrom][1]
             print "genome size: ",
         print self.chrom_length
-       
-        print "using matrix of size", self.m_dim, "there are", \
-              self.cells, "cells in the matrix and each cell represents", \
-              self.norm_factor, "base pairs."
-        
+
         self.incr_column = incr_column
         self.num_intervals = 0
         self.total_interval_length = 0
         chromdict = pbt.chromsizes(genome)
         self.temp_files = []
 
-        super(HilbertMatrix, self).__init__(matrix_dim, self.chrom_length)
+        super(HilbertMatrix, self).__init__(m_dim, self.chrom_length)
+
+        print "using matrix of size", self.m_dim, "there are", \
+              self.ncells, "cells in the matrix and each cell represents", \
+              self.norm_factor, "base pairs."
 
         # populate the matrix with the data contained in self.file
         self.build()
@@ -290,7 +291,7 @@ class HilbertMatrix(HilbertNormalized):
         for ivl in ivls:
             self.num_intervals += 1
             self.total_interval_length += ivl.end - ivl.start
-            
+
             start = ivl.start
             end = ivl.end
             if not self.chrom == "genome":
