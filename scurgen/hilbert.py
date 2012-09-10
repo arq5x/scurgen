@@ -4,6 +4,7 @@ import sys
 import os
 import matplotlib
 import subprocess
+import bisect
 from pybedtools import genome_registry
 
 
@@ -213,25 +214,33 @@ class HilbertMatrix(HilbertNormalized):
             # using the entire genome for our coordinate system
             self.chrom_length = 0
             curr_offset = 0
-            self.chrom_offsets = {}
+            self.chrom_offsets = {}  
+            self.chrom_offsets_list = []
+            self.chrom_names_list = []          
             for chrom in self.chromdict:
                 self.chrom_offsets[chrom] = curr_offset
+                self.chrom_offsets_list.append(curr_offset)
+                self.chrom_names_list.append(chrom)
                 self.chrom_length += self.chromdict[chrom][1]
                 curr_offset += self.chromdict[chrom][1]
             print "genome size: ",
         print self.chrom_length
-       
+        
+        super(HilbertMatrix, self).__init__(matrix_dim, self.chrom_length)
+        
         print "using matrix of size", self.m_dim, "there are", \
-              self.cells, "cells in the matrix and each cell represents", \
-              self.norm_factor, "base pairs."
+              self.ncells, "cells in the matrix and each cell represents", \
+              int(self.dist_per_cell), "base pairs."
         
         self.incr_column = incr_column
         self.num_intervals = 0
         self.total_interval_length = 0
         chromdict = pbt.chromsizes(genome)
+        chrom_offsets = []
+        chrom_names = []
         self.temp_files = []
 
-        super(HilbertMatrix, self).__init__(matrix_dim, self.chrom_length)
+
 
         # populate the matrix with the data contained in self.file
         self.build()
@@ -274,6 +283,39 @@ class HilbertMatrix(HilbertNormalized):
             self.incr_column = 4
             self.temp_files.append(bedg_filename)
             return pbt.BedTool(bedg_filename)
+            
+    def get_chrom_range(self, x, y):
+        """
+        Given an x,y coordinate in the matrix, compute the
+        chrom, start and end coordinate tht the cell represents.
+        
+        When plotting a single chromosome, this is merely a matter of
+        getting the curve distance that the cell is from the origin
+        and then multiplying that distance by the size (in bp) of
+        each cell.
+        
+        For whole genome plots, we need to use the distance to figure out
+        which chrom we are in and then from that, figure out how far we are
+        into the chrom.
+        """
+        if self.chrom != "genome":
+            matrix_dist = xy2d(self.m_dim, x, y)
+            chrom = self.chrom
+            start = matrix_dist * self.dist_per_cell
+            end = start + self.dist_per_cell 
+        else:
+            matrix_dist = xy2d(self.m_dim, x, y)
+            bp_dist = matrix_dist * self.dist_per_cell
+            
+            idx = bisect.bisect_left(self.chrom_offsets_list, bp_dist) - 1
+            chrom = self.chrom_names_list[idx]
+            chrom_offset = self.chrom_offsets_list[idx]
+            bp_dist_from_chrom_start = bp_dist - chrom_offset
+            start = int(bp_dist_from_chrom_start / self.dist_per_cell) * \
+                    self.dist_per_cell
+            end = start + self.dist_per_cell
+
+        return chrom, int(start), int(end)
 
     def build(self):
         """
@@ -308,20 +350,18 @@ class HilbertMatrix(HilbertNormalized):
         self._cleanup()
 
     def dump_matrix(self):
+        
         mat_dump = open(self.file + ".mtx", 'w')
         # header
         mat_dump.write('\t'.join(['row', 'col', 'value', 'chrom',
                                   'start', 'end']) + '\n')
-        start = 0
         for r in xrange(self.m_dim):
             for c in xrange(self.m_dim):
-                d = xy2d(self.m_dim, r, c)
-                end = (start + self.norm_factor)
+                (chrom, start, end) = self.get_chrom_range(r, c)
                 mat_dump.write('\t'.join(str(s) for s in [r, c,
                                          self.matrix[r][c],
-                                         self.chrom, start,
+                                         chrom, start,
                                          end]) + '\n')
-                start += self.norm_factor
         mat_dump.close()
 
     def mask_low_values(self, min_val=0):
