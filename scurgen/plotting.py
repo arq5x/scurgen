@@ -2,8 +2,12 @@ from matplotlib import pyplot as plt
 import matplotlib
 
 def debug_plot(h):
-    imshow_kwargs = dict(interpolation='nearest', 
-            cmap=matplotlib.cm.Spectral_r)
+    """
+    Quick plot of a HilbertBase subclass that also labels the first 10 cells
+    """
+    imshow_kwargs = dict(
+        interpolation='nearest',
+        cmap=matplotlib.cm.Spectral_r)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     mappable = ax.imshow(h.matrix, **imshow_kwargs)
