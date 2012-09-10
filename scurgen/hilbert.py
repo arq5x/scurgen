@@ -325,7 +325,7 @@ class HilbertMatrix(HilbertNormalized):
         mat_dump.close()
 
     def mask_low_values(self, min_val=0):
-        self.matrix[self.matrix < min_val] = np.NaN
+        self.matrix = np.ma.masked_where(self.matrix <= min_val, self.matrix)
 
     def norm_by_total_intervals(self):
         rows, cols = self.matrix.shape
