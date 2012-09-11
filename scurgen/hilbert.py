@@ -219,13 +219,14 @@ class HilbertMatrix(HilbertNormalized):
                 # grab the length of the requested chromosome
                 self.chrom_length = self.chromdict[self.chrom][1]
                 self.use_chrom_range = False
-                print self.chrom, "size: ",
+
             else:
                 (self.chrom, self.range_start, self.range_end) = \
                         chrom_range_tuple
-                self.use_chrom_range = True
                 self.chrom_length = self.range_end - self.range_start
-                print self.chrom, "size: ",
+                self.use_chrom_range = True
+
+            print self.chrom, "size: ",
         else:
             # using the entire genome for our coordinate system
             self.chrom_length = 0
