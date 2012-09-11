@@ -171,11 +171,15 @@ class HilbertGUI(object):
             vmin=self.h2.matrix.min(), vmax=self.h2.matrix.max())
         self.mappable1.set_norm(norm1)
         self.mappable2.set_norm(norm2)
+        self.cbar1.set_norm(norm1)
+        self.cbar2.set_norm(norm2)
+        self.cbar1.update_normal(self.mappable1)
+        self.cbar2.update_normal(self.mappable2)
         plt.draw()
 
     def _linear(self):
         """
-        Update colomaps of the plotted images to use linear-scaled color
+        Update colormaps of the plotted images to use linear-scaled color
         """
         norm1 = matplotlib.colors.Normalize(
             vmin=self.h1.matrix.min(), vmax=self.h1.matrix.max())
@@ -183,6 +187,10 @@ class HilbertGUI(object):
             vmin=self.h2.matrix.min(), vmax=self.h2.matrix.max())
         self.mappable1.set_norm(norm1)
         self.mappable2.set_norm(norm2)
+        self.cbar1.set_norm(norm1)
+        self.cbar2.set_norm(norm2)
+        self.cbar1.update_normal(self.mappable1)
+        self.cbar2.update_normal(self.mappable2)
         plt.draw()
 
 
