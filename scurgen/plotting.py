@@ -156,6 +156,8 @@ class HilbertGUI(object):
         """
         def _slider_callback(x):
             mappable.set_alpha(x)
+            cbar.set_alpha(x)
+            cbar.update_normal(mappable)
 
         return _slider_callback
 
