@@ -134,8 +134,8 @@ class HilbertGUI(object):
         self.slider2.label.set_size(10)
 
         # Callback changes alpha
-        self.slider1.on_changed(lambda x: self.mappable1.set_alpha(x))
-        self.slider2.on_changed(lambda x: self.mappable2.set_alpha(x))
+        self.slider1.on_changed(self._slider_callback_factory(self.mappable1, self.cbar1))
+        self.slider2.on_changed(self._slider_callback_factory(self.mappable2, self.cbar2))
 
         # Callback changes color scale
         self.radio.on_clicked(self._radio_callback)
@@ -148,6 +148,16 @@ class HilbertGUI(object):
             self._linear()
         else:
             raise ValueError("unspecified label for radio button")
+
+    def _slider_callback_factory(self, mappable, cbar):
+        """
+        Given a mappable (i.e., object returned from imshow()), return
+        a function that will modify it based on the slider's value.
+        """
+        def _slider_callback(x):
+            mappable.set_alpha(x)
+
+        return _slider_callback
 
     def _log(self):
         """
