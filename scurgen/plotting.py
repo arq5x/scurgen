@@ -45,7 +45,6 @@ class HilbertGUI(object):
         self.h1 = HilbertMatrix(intervals1, **kwargs)
         self.h2 = HilbertMatrix(intervals2, **kwargs)
 
-        # masked values become 0% alpha all the time
         self.h1.mask_low_values()
         self.h2.mask_low_values()
 
@@ -68,14 +67,19 @@ class HilbertGUI(object):
         self.slider_ax1 = plt.Axes(self.fig, (0.3, 0.07, 0.3, 0.02))
         self.slider_ax2 = plt.Axes(self.fig, (0.3, 0.02, 0.3, 0.02))
 
+        self.min_slider_ax1 = plt.Axes(self.fig, (0.7, 0.07, 0.07, 0.02))
+        self.min_slider_ax2 = plt.Axes(self.fig, (0.7, 0.02, 0.07, 0.02))
+
         # Radio buttons axes
-        self.radio_ax = plt.Axes(self.fig, (0.75, 0.02, 0.1, 0.1))
+        self.radio_ax = plt.Axes(self.fig, (0.85, 0.02, 0.1, 0.1))
 
         # Add everyone to the fig
         self.fig.add_axes(self.ax)
         self.fig.add_axes(self.slider_ax1)
         self.fig.add_axes(self.slider_ax2)
         self.fig.add_axes(self.radio_ax)
+        self.fig.add_axes(self.min_slider_ax1)
+        self.fig.add_axes(self.min_slider_ax2)
 
         # plot the matrices on top of each other
         self.mappable1 = self.ax.imshow(
@@ -118,6 +122,20 @@ class HilbertGUI(object):
             valmax=1,
             valinit=0.5)
 
+        self.min_slider1 = Slider(
+            self.min_slider_ax1,
+            'min',
+            valmin=self.h1.masked.min(),
+            valmax=self.h1.masked.max(),
+            valinit=0)
+
+        self.min_slider2 = Slider(
+            self.min_slider_ax2,
+            'min',
+            valmin=self.h2.masked.min(),
+            valmax=self.h2.masked.max(),
+            valinit=0)
+
         # For controlling log/linear color scale
         self.radio = RadioButtons(
             self.radio_ax,
@@ -127,15 +145,27 @@ class HilbertGUI(object):
         # These colors look nice with the current colormaps (Reds and Blues)
         # but TODO: should eventually be configurable
         self.slider1.poly.set_color('#7a0510')
+        self.min_slider1.poly.set_color('#7a0510')
         self.slider2.poly.set_color('#08316d')
+        self.min_slider2.poly.set_color('#08316d')
 
         # Label tweaks
-        self.slider1.label.set_size(10)
-        self.slider2.label.set_size(10)
+        for slider in [self.slider1, self.slider2, self.min_slider1,
+                       self.min_slider2]:
+            slider.label.set_size(10)
 
         # Callback changes alpha
-        self.slider1.on_changed(self._slider_callback_factory(self.mappable1, self.cbar1))
-        self.slider2.on_changed(self._slider_callback_factory(self.mappable2, self.cbar2))
+        self.slider1.on_changed(
+            self._slider_callback_factory(self.mappable1, self.cbar1))
+        self.slider2.on_changed(
+            self._slider_callback_factory(self.mappable2, self.cbar2))
+
+        self.min_slider1.on_changed(
+            self._min_slider_callback_factory(
+                self.h1, self.mappable1, self.cbar1))
+        self.min_slider2.on_changed(
+            self._min_slider_callback_factory(
+                self.h2, self.mappable2, self.cbar2))
 
         # Callback changes color scale
         self.radio.on_clicked(self._radio_callback)
@@ -160,6 +190,13 @@ class HilbertGUI(object):
             cbar.update_normal(mappable)
 
         return _slider_callback
+
+    def _min_slider_callback_factory(self, h, mappable, cbar):
+        def _min_slider_callback(x):
+            h.mask_low_values(min_val=x)
+            mappable.set_data(h.masked)
+
+        return _min_slider_callback
 
     def _log(self):
         """
