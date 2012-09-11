@@ -197,6 +197,6 @@ class HilbertGUI(object):
 if __name__ == "__main__":
     fn1 = '../data/cpg-islands.hg19.chr10.bed'
     fn2 = '../data/refseq.chr10.exons.bed'
-    g = HilbertGUI(fn1, fn2, genome='hg19', chrom='chr10', m_dim=128)
+    g = HilbertGUI(fn1, fn2, genome='hg19', chrom='chr10', matrix_dim=128)
     g.plot()
     plt.show()
