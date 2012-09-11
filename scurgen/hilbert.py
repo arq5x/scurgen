@@ -245,6 +245,7 @@ class HilbertMatrix(HilbertNormalized):
         # populate the matrix with the data contained in self.file
         self.build()
         self.dump_matrix()
+        self.masked = self.matrix
 
     def _cleanup(self):
         for temp_file in self.temp_files:
@@ -364,7 +365,7 @@ class HilbertMatrix(HilbertNormalized):
         mat_dump.close()
 
     def mask_low_values(self, min_val=0):
-        self.matrix = np.ma.masked_where(self.matrix <= min_val, self.matrix)
+        self.masked = np.ma.masked_array(self.matrix, self.matrix <= min_val)
 
     def norm_by_total_intervals(self):
         rows, cols = self.matrix.shape
