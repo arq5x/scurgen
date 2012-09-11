@@ -2,12 +2,14 @@ import numpy as np
 import pybedtools as pbt
 import sys
 import os
+import re
 import matplotlib
 import subprocess
 import bisect
 from pybedtools import genome_registry
 
-
+    
+    
 def rot(n, x, y, rx, ry):
     if (ry == 0):
         if (rx == 1):
@@ -52,12 +54,17 @@ def xy2d(n, x, y):
     return d
 
 
-class Interval(object):
+def get_interval_from_string(s):
+    chrom_range_pattern   = re.compile('(\S+)\:([0-9]+)\-([0-9]+)')
+    
+    if chrom_range_pattern.search(s):
+        (chrom, start, end) = re.findall(chrom_range_pattern, s)[0]
+        start = int(start)
+        end = int(end)
+        return (chrom, start, end)
+    else:
+        return None 
 
-    def __init__(self, chrom, start, end):
-        self.chrom = chrom
-        self.start = start
-        self.end = end
 
 class HilbertBase(object):
     def __init__(self, m_dim):
@@ -207,9 +214,18 @@ class HilbertMatrix(HilbertNormalized):
         self.chromdict = pbt.chromsizes(self.genome)
 
         if self.chrom != "genome":
-            # grab the length of the requested chromosome
-            self.chrom_length = self.chromdict[self.chrom][1]
-            print self.chrom, "size: ", 
+            chrom_range_tuple = get_interval_from_string(self.chrom)
+            if chrom_range_tuple is None:
+                # grab the length of the requested chromosome
+                self.chrom_length = self.chromdict[self.chrom][1]
+                self.use_chrom_range = False
+                print self.chrom, "size: ",
+            else:
+                (self.chrom, self.range_start, self.range_end) = \
+                        chrom_range_tuple
+                self.use_chrom_range = True
+                self.chrom_length = self.range_end - self.range_start
+                print self.chrom, "size: ",
         else:
             # using the entire genome for our coordinate system
             self.chrom_length = 0
@@ -252,7 +268,15 @@ class HilbertMatrix(HilbertNormalized):
 
     def _get_intervals(self):
         if not self.file.endswith('.bam'):
-            return pbt.BedTool(self.file)
+            if not self.use_chrom_range:
+                return pbt.BedTool(self.file)
+            else:
+                range_str = self.chrom + '\t' + \
+                            str(self.range_start) + '\t' + \
+                            str(self.range_end)
+                range_file = pbt.BedTool(range_str, from_string=True)
+                main_file = pbt.BedTool(self.file)
+                return main_file.intersect(range_file)
         else:
             # if we have a BAM file, we need to convert to
             # BEDGRAPH and force the use of the SCORE column

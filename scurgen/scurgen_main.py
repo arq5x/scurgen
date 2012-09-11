@@ -21,7 +21,10 @@ def plot(parser, args):
     hilbert = plt.imshow(hm.matrix, interpolation='nearest', cmap=cmap)
     plt.colorbar()
     
-    out_file = args.file + "." + args.format
+    if not hm.use_chrom_range:
+        out_file = args.file + "." + args.format
+    else:
+        out_file = args.file + "." + args.chrom + "." + args.format
     fig.savefig(out_file, dpi=args.dpi, transparent=True)
     
     if not args.no_show:
