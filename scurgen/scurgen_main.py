@@ -99,7 +99,8 @@ def main():
                         default='hg19')
 
     parser_plot.add_argument('--chrom', dest='chrom', metavar='STRING', 
-                        help='The chrom that should be plotted (e.g., chr1)')
+                        help="The chrom that should be plotted (e.g., chr1,\
+                             genome, or chr1:100-200)")
     
     parser_plot.add_argument('--inc_col', dest='inc_col', \
                                 metavar='INC_COL', 
