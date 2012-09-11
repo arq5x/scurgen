@@ -65,8 +65,8 @@ class HilbertGUI(object):
         # Alpha sliders.
         # TODO: eventually n-way comparisons; these should be appended on the
         # bottom of self.ax?
-        self.slider_ax1 = plt.Axes(self.fig, (0.3, 0.02, 0.3, 0.02))
-        self.slider_ax2 = plt.Axes(self.fig, (0.3, 0.07, 0.3, 0.02))
+        self.slider_ax1 = plt.Axes(self.fig, (0.3, 0.07, 0.3, 0.02))
+        self.slider_ax2 = plt.Axes(self.fig, (0.3, 0.02, 0.3, 0.02))
 
         # Radio buttons axes
         self.radio_ax = plt.Axes(self.fig, (0.75, 0.02, 0.1, 0.1))
@@ -104,14 +104,14 @@ class HilbertGUI(object):
                 txt.set_size(8)
 
         # Set up sliders with sensible default labels
-        self.slider2 = Slider(
+        self.slider1 = Slider(
             self.slider_ax1,
             os.path.basename(self.h1.file),
             valmin=0,
             valmax=1,
             valinit=0.5)
 
-        self.slider1 = Slider(
+        self.slider2 = Slider(
             self.slider_ax2,
             os.path.basename(self.h2.file),
             valmin=0,
