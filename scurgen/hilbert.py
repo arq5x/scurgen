@@ -269,14 +269,18 @@ class HilbertMatrix(HilbertNormalized):
 
     def _get_intervals(self):
         if not self.file.endswith('.bam'):
+            main_file = pbt.BedTool(self.file)
+            
             if not self.use_chrom_range:
-                return pbt.BedTool(self.file)
+                # no range requested, so just use the full file
+                return main_file
             else:
+                # range requested so intersect the main file
+                # against the a range_file built from the range
                 range_str = self.chrom + '\t' + \
                             str(self.range_start) + '\t' + \
                             str(self.range_end)
                 range_file = pbt.BedTool(range_str, from_string=True)
-                main_file = pbt.BedTool(self.file)
                 return main_file.intersect(range_file)
         else:
             # if we have a BAM file, we need to convert to
