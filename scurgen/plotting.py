@@ -79,11 +79,11 @@ class HilbertGUI(object):
 
         # plot the matrices on top of each other
         self.mappable1 = self.ax.imshow(
-            self.h1.matrix, interpolation='nearest',
+            self.h1.masked, interpolation='nearest',
             cmap=matplotlib.cm.Reds)
 
         self.mappable2 = self.ax.imshow(
-            self.h2.matrix, interpolation='nearest', cmap=matplotlib.cm.Blues)
+            self.h2.masked, interpolation='nearest', cmap=matplotlib.cm.Blues)
 
         # Initialize alphas
         self.mappable1.set_alpha(0.5)
@@ -166,9 +166,9 @@ class HilbertGUI(object):
         Update colomaps of the plotted images to use log-scaled color
         """
         norm1 = matplotlib.colors.LogNorm(
-            vmin=self.h1.matrix.min(), vmax=self.h1.matrix.max())
+            vmin=self.h1.masked.min(), vmax=self.h1.masked.max())
         norm2 = matplotlib.colors.LogNorm(
-            vmin=self.h2.matrix.min(), vmax=self.h2.matrix.max())
+            vmin=self.h2.masked.min(), vmax=self.h2.masked.max())
         self.mappable1.set_norm(norm1)
         self.mappable2.set_norm(norm2)
         self.cbar1.set_norm(norm1)
@@ -182,9 +182,9 @@ class HilbertGUI(object):
         Update colormaps of the plotted images to use linear-scaled color
         """
         norm1 = matplotlib.colors.Normalize(
-            vmin=self.h1.matrix.min(), vmax=self.h1.matrix.max())
+            vmin=self.h1.masked.min(), vmax=self.h1.masked.max())
         norm2 = matplotlib.colors.Normalize(
-            vmin=self.h2.matrix.min(), vmax=self.h2.matrix.max())
+            vmin=self.h2.masked.min(), vmax=self.h2.masked.max())
         self.mappable1.set_norm(norm1)
         self.mappable2.set_norm(norm2)
         self.cbar1.set_norm(norm1)
