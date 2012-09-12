@@ -117,3 +117,11 @@ def test_norm_dist_fill():
         assert h.matrix[1, 0] == 1
         assert h.matrix[1, 1] == 1
         assert h.matrix.sum() == 2
+
+
+def test_xy2d_d2xy():
+    n = 8
+    for d in range(n * n):
+        x, y = hilbert.d2xy(n, d)
+        d2 = hilbert.xy2d(n, x, y)
+        assert d == d2
