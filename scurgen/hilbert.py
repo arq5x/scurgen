@@ -79,6 +79,7 @@ class HilbertBase(object):
         self.m_dim = m_dim
         self.ncells = m_dim * m_dim
         self.matrix = np.zeros((self.m_dim, self.m_dim), dtype=np.float)
+        self.masked = self.matrix
 
     def update(self, d1, d2, value=1, func=np.add):
         """
