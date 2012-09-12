@@ -331,11 +331,17 @@ class HilbertMatrix(HilbertNormalized):
             self.incr_column = 4
             self.temp_files.append(bedg_filename)
             return pbt.BedTool(bedg_filename)
-            
+
+    def rc2chrom(self, row, col):
+        return self.get_chrom_range(col, row)
+
+    def xy2chrom(self, x, y):
+        return self.get_chrom_range(x, y)
+
     def get_chrom_range(self, x, y):
         """
         Given an x,y coordinate in the matrix, compute the
-        chrom, start and end coordinate tht the cell represents.
+        chrom, start and end coordinate that the cell represents.
         
         When plotting a single chromosome, this is merely a matter of
         getting the curve distance that the cell is from the origin
