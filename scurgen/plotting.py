@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
@@ -40,7 +41,7 @@ def debug_plot(h, verbose=True, nlabels=10):
 
 
 class HilbertGUI(object):
-    def __init__(self, intervals1, intervals2, **kwargs):
+    def __init__(self, intervals1, intervals2, debug=False, **kwargs):
         """
         :param intervals1:
             A file supported by pybedtools (BED, VCF, GTF, etc)
@@ -48,18 +49,24 @@ class HilbertGUI(object):
         :param intervals2:
             Another file supporte by pybedtools
 
+        :param debug:
+            If True, then print some extra debugging info
+
         :param kwargs:
             Additional keyword arguments are passed to HilbertMatrix (e.g.,
             m_dim, genome, chrom)
         """
         # TODO: lots of possible configuration here.  Possibly use a YAML
         # config file strategy?
+        self.matrix_dim = kwargs['matrix_dim']
 
         self.h1 = HilbertMatrix(intervals1, **kwargs)
         self.h2 = HilbertMatrix(intervals2, **kwargs)
 
         self.h1.mask_low_values()
         self.h2.mask_low_values()
+
+        self.debug = debug
 
     def plot(self):
         """
@@ -94,13 +101,17 @@ class HilbertGUI(object):
         self.fig.add_axes(self.min_slider_ax1)
         self.fig.add_axes(self.min_slider_ax2)
 
-        # plot the matrices on top of each other
+        # plot the matrices on top of each other. Note that only one gets the
+        # `picker` kwarg; otherwise the callback will trigger multiple times.
         self.mappable1 = self.ax.imshow(
             self.h1.masked, interpolation='nearest',
-            cmap=matplotlib.cm.Reds)
+            origin='lower',
+            cmap=matplotlib.cm.Reds, picker=5)
 
         self.mappable2 = self.ax.imshow(
-            self.h2.masked, interpolation='nearest', cmap=matplotlib.cm.Blues)
+            self.h2.masked, interpolation='nearest',
+            origin='lower',
+            cmap=matplotlib.cm.Blues)
 
         # Initialize alphas
         self.mappable1.set_alpha(0.5)
@@ -123,14 +134,14 @@ class HilbertGUI(object):
         # Set up sliders with sensible default labels
         self.slider1 = Slider(
             self.slider_ax1,
-            os.path.basename(self.h1.file),
+            'a: ' + os.path.basename(self.h1.file),
             valmin=0,
             valmax=1,
             valinit=0.5)
 
         self.slider2 = Slider(
             self.slider_ax2,
-            os.path.basename(self.h2.file),
+            'b: ' + os.path.basename(self.h2.file),
             valmin=0,
             valmax=1,
             valinit=0.5)
@@ -182,6 +193,24 @@ class HilbertGUI(object):
 
         # Callback changes color scale
         self.radio.on_clicked(self._radio_callback)
+
+        self.fig.canvas.mpl_connect('pick_event', self._coord_callback)
+
+    def _coord_callback(self, event):
+        x = event.mouseevent.xdata
+        y = event.mouseevent.ydata
+        xi = int(round(x))
+        yi = int(round(y))
+        if self.debug:
+            print
+            print 'mouse x:', x, 'xi:', xi
+            print 'mouse y:', y, 'yi:', yi
+        s = '%s:%s-%s' % self.h1.xy2chrom(xi, yi)
+
+        # Note that xi=cols and yi=rows, hence the indexing switcharoo
+        s += ' [a=%s; b=%s]' % (self.h1.matrix[yi, xi], self.h2.matrix[yi, xi])
+        print s
+        sys.stdout.flush()
 
     def _radio_callback(self, label):
         # Hello? Am I the 9th caller!?
