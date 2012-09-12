@@ -271,7 +271,6 @@ class HilbertMatrix(HilbertNormalized):
         # populate the matrix with the data contained in self.file
         self.build()
         self.dump_matrix()
-        self.masked = self.matrix
 
     def _cleanup(self):
         for temp_file in self.temp_files:
@@ -374,6 +373,15 @@ class HilbertMatrix(HilbertNormalized):
             
             start = ivl.start
             end = ivl.end
+
+            # BED coords, which pybedtools uses under the hood, are zero-based
+            # but do not include the stop position.
+            #
+            # The semantics of self.update() *do* include the stop position. So
+            # subtract 1 from the end here -- but set it to the start if it's
+            # a 1-bp feature.
+            end = min(ivl.end - 1, ivl.start)
+
             if not self.chrom == "genome":
                 if ivl.chrom != self.chrom:
                     continue
