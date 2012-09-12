@@ -1,11 +1,38 @@
 Overview
 --------
-`scurgen` (/skur'jən/) is a command line tool for plotting genomic data 
-using scpace-filling curves such as the Hilbert Curve.
+`scurgen` (/skur'jən/) is a command line and GUI tool for plotting and
+exploring genomic data using scpace-filling curves such as the Hilbert Curve.
 
-.. WARNING::
-   This project is in its infancy.  Documentation is sparse, functionality is 
-   evolving, and installation/dependencies are not documented.  
+
+Dependencies
+------------
+`scurgen` depends upon `bedtools`, `pybedtools`, `numpy`, `matplotlib` 
+and `PIL`.  However, except for `bedtools`, all of these dependencies should 
+be automatically installed (if not already) as part of the installation
+process (below).
+
+Installation
+------------
+After cloning or downloading the source code, you will need to run the 
+following::
+
+	python setup.py build
+	
+	python setup.py install
+	
+At this point, if there are no errors, you should be able to type `scurgen
+--help` on the command line and see the following.  If so, you are in business::
+
+	scurgen --help
+	usage: scurgen [-h] {plot,combine} ...
+
+	optional arguments:
+  	-h, --help      show this help message and exit
+
+	[sub-commands]:
+  	{plot,combine}
+    	plot          plot a single dataset
+    	combine       combine two datasets
 
    
 The plot module
