@@ -21,7 +21,10 @@ def plot(parser, args):
     hilbert = plt.imshow(hm.matrix, interpolation='nearest', cmap=cmap)
     plt.colorbar()
     
-    out_file = args.file + "." + args.format
+    if not hm.use_chrom_range:
+        out_file = args.file + "." + args.format
+    else:
+        out_file = args.file + "." + args.chrom + "." + args.format
     fig.savefig(out_file, dpi=args.dpi, transparent=True)
     
     if not args.no_show:
@@ -96,7 +99,8 @@ def main():
                         default='hg19')
 
     parser_plot.add_argument('--chrom', dest='chrom', metavar='STRING', 
-                        help='The chrom that should be plotted (e.g., chr1)')
+                        help="The chrom that should be plotted (e.g., chr1,\
+                             genome, or chr1:100-200)")
     
     parser_plot.add_argument('--inc_col', dest='inc_col', \
                                 metavar='INC_COL', 
