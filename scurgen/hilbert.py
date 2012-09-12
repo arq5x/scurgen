@@ -54,6 +54,19 @@ def xy2d(n, x, y):
     return d
 
 
+def rc2d(n, row, col):
+    x = col
+    y = n - row - 1
+    return xy2d(n, x, y)
+
+
+def d2rc(n, d):
+    x, y = d2xy(n, d)
+    col = x
+    row = y
+    return row, col
+
+
 def get_interval_from_string(s):
     chrom_range_pattern   = re.compile('(\S+)\:([0-9]+)\-([0-9]+)')
     
@@ -79,6 +92,7 @@ class HilbertBase(object):
         self.m_dim = m_dim
         self.ncells = m_dim * m_dim
         self.matrix = np.zeros((self.m_dim, self.m_dim), dtype=np.float)
+        self.masked = self.matrix
 
     def update(self, d1, d2, value=1, func=np.add):
         """
@@ -103,8 +117,12 @@ class HilbertBase(object):
             `value`.
         """
         for dist in xrange(d1, d2 + 1):
-            x, y = d2xy(self.m_dim, dist)
-            self.matrix[x, y] = func(self.matrix[x, y], value)
+            # filling in matrix, so use row, col coords
+            row, col = d2rc(self.m_dim, dist)
+            self.matrix[row, col] = func(self.matrix[row, col], value)
+
+    def mask_low_values(self, min_val=0):
+        self.masked = np.ma.masked_array(self.matrix, self.matrix <= min_val)
 
     def reset(self):
         """
@@ -124,18 +142,14 @@ class HilbertBase(object):
 
         In this case the (x, y) coords fall within the center of each cell.
         """
-        # Note: there's probably some more elegant way to do this but this
-        # seems to work...
+        # To be plotted, so use x, y coords instead of row, col coords
         xs, ys = [], []
         for i in range(self.ncells):
             x, y = d2xy(self.m_dim, i)
-            xi = y
-            yi = self.m_dim - x - 1
-            xs.append(xi)
-            ys.append(yi)
+            xs.append(x)
+            ys.append(y)
 
-        # Reverse everything
-        return np.array(xs)[::-1], np.array(ys)[::-1], range(self.ncells)
+        return np.array(xs), np.array(ys), range(self.ncells)
 
 
 class HilbertNormalized(HilbertBase):
@@ -211,7 +225,13 @@ class HilbertMatrix(HilbertNormalized):
         self.chrom = chrom
 
         # grab the dict of chrom lengths for this genome
-        self.chromdict = pbt.chromsizes(self.genome)
+        if isinstance(self.genome, basestring):
+            self.chromdict = pbt.chromsizes(self.genome)
+        elif isinstance(self.genome, dict):
+            self.chromdict = self.genome
+        else:
+            raise ValueError('`genome` must be either a string assembly name '
+                    ' or a dictionary of chrom:(start, stop)')
 
         if self.chrom != "genome":
             chrom_range_tuple = get_interval_from_string(self.chrom)
@@ -252,7 +272,6 @@ class HilbertMatrix(HilbertNormalized):
         self.incr_column = incr_column
         self.num_intervals = 0
         self.total_interval_length = 0
-        chromdict = pbt.chromsizes(genome)
         chrom_offsets = []
         chrom_names = []
         self.temp_files = []
@@ -312,11 +331,17 @@ class HilbertMatrix(HilbertNormalized):
             self.incr_column = 4
             self.temp_files.append(bedg_filename)
             return pbt.BedTool(bedg_filename)
-            
+
+    def rc2chrom(self, row, col):
+        return self.get_chrom_range(col, row)
+
+    def xy2chrom(self, x, y):
+        return self.get_chrom_range(x, y)
+
     def get_chrom_range(self, x, y):
         """
         Given an x,y coordinate in the matrix, compute the
-        chrom, start and end coordinate tht the cell represents.
+        chrom, start and end coordinate that the cell represents.
         
         When plotting a single chromosome, this is merely a matter of
         getting the curve distance that the cell is from the origin
@@ -364,6 +389,15 @@ class HilbertMatrix(HilbertNormalized):
             
             start = ivl.start
             end = ivl.end
+
+            # BED coords, which pybedtools uses under the hood, are zero-based
+            # but do not include the stop position.
+            #
+            # The semantics of self.update() *do* include the stop position. So
+            # subtract 1 from the end here -- but set it to the start if it's
+            # a 1-bp feature.
+            end = min(ivl.end - 1, ivl.start)
+
             if not self.chrom == "genome":
                 if ivl.chrom != self.chrom:
                     continue
@@ -392,12 +426,6 @@ class HilbertMatrix(HilbertNormalized):
                                          end]) + '\n')
         mat_dump.close()
 
-    def mask_low_values(self, min_val=0):
-        rows, cols = self.matrix.shape
-        for r in range(rows):
-            for c in range(cols):
-                if self.matrix[r][c] <= min_val:
-                    self.matrix[r][c] = np.NaN
 
     def norm_by_total_intervals(self):
         rows, cols = self.matrix.shape

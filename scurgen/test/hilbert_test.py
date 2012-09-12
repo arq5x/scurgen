@@ -1,4 +1,5 @@
 import numpy as np
+import pybedtools
 from scurgen import hilbert
 from scurgen.plotting import debug_plot
 from nose.tools import assert_raises
@@ -69,7 +70,7 @@ def test_cell_fill():
 
     assert h.matrix.sum() == 11
     assert h.matrix[0][0] == 6
-    assert h.matrix[1][0] == 5
+    assert h.matrix[0][1] == 5
 
     # arbitrary function
     def overwrite(orig, new):
@@ -105,7 +106,7 @@ def test_norm_dist_fill():
         h.update(0, dist_to_fill)
 
         assert h.matrix[0, 0] == 1
-        assert h.matrix[1, 0] == 1
+        assert h.matrix[0, 1] == 1
         assert h.matrix[1, 1] == 1
         assert h.matrix.sum() == 3
 
@@ -114,6 +115,84 @@ def test_norm_dist_fill():
         h.update(1 * h.dist_per_cell, dist_to_fill)
 
         assert h.matrix[0, 0] == 0
-        assert h.matrix[1, 0] == 1
+        assert h.matrix[0, 1] == 1
         assert h.matrix[1, 1] == 1
         assert h.matrix.sum() == 2
+
+
+def test_xy2d_d2xy():
+    n = 8
+    for d in range(n * n):
+        x, y = hilbert.d2xy(n, d)
+        d2 = hilbert.xy2d(n, x, y)
+        assert d == d2
+
+
+def test_masked():
+    h = hilbert.HilbertBase(16)
+    h.update(0, 5, value=10)
+    h.update(0, 1, value=50)
+
+    assert h.matrix.sum() == 160
+    assert h.masked.sum() == 160
+
+    h.mask_low_values(min_val=10)
+
+    # masking should not change the original data
+    assert h.matrix.sum() == 160
+
+    # but the masked one has changed
+    assert h.masked.sum() == 120
+
+    # mask should have only masked 2 cells
+    assert (~h.masked.mask).sum() == 2
+
+
+def test_chrom_range():
+    dim = 8
+
+    # Create a BedTool object that has features every 1 bp through the end of
+    # the chrom, and scores continuously increment.
+    def generator():
+        for i in range(dim * dim):
+            yield pybedtools.create_interval_from_list([
+                'chr1', str(i), str(i + 1), str(i)])
+
+    one_bp_bt = pybedtools.BedTool(generator()).saveas()
+
+    # conveniently-sized genome completely encompasses intervals in one_bp_bt
+    genome = {'chr1': (0, dim * dim)}
+
+    h = hilbert.HilbertMatrix(
+        # provide just the filename of the BedTool
+        file=one_bp_bt.fn,
+        genome=genome,
+        chrom='chr1',
+        matrix_dim=dim,
+        # incr_column is 1-based!
+        incr_column=4)
+
+    # Everything in the matrix should contain all the scores in the bedgraph
+    # file, and given how everything was constructed it ought to be the same as
+    # the sum of integers from 0 to dim^2
+    assert h.matrix.sum() == sum([int(i[-1]) for i in one_bp_bt]) \
+        == sum(range(dim * dim))
+
+    #debug_plot(h)
+
+    # be paranoid to make sure we're using the right matrix...this checks that
+    # the values in the cells are correct...
+    assert h.matrix[0, 0] == 0
+    assert h.matrix[1, 0] == 1
+    assert h.matrix[1, 1] == 2
+    assert h.matrix[0, 1] == 3
+    assert h.matrix[0, 2] == 4
+    assert h.matrix[0, 3] == 5
+
+    # ...and this checks that those same cells return the correct chrom_range
+    assert h.rc2chrom(0, 0) == ('chr1', 0, 1)
+    assert h.rc2chrom(1, 0) == ('chr1', 1, 2)
+    assert h.rc2chrom(1, 1) == ('chr1', 2, 3)
+    assert h.rc2chrom(0, 1) == ('chr1', 3, 4)
+    assert h.rc2chrom(0, 2) == ('chr1', 4, 5)
+    assert h.rc2chrom(0, 3) == ('chr1', 5, 6)
