@@ -106,6 +106,9 @@ class HilbertBase(object):
             x, y = d2xy(self.m_dim, dist)
             self.matrix[x, y] = func(self.matrix[x, y], value)
 
+    def mask_low_values(self, min_val=0):
+        self.masked = np.ma.masked_array(self.matrix, self.matrix <= min_val)
+
     def reset(self):
         """
         Resets the matrix to zeros everywhere
@@ -393,8 +396,6 @@ class HilbertMatrix(HilbertNormalized):
                                          end]) + '\n')
         mat_dump.close()
 
-    def mask_low_values(self, min_val=0):
-        self.masked = np.ma.masked_array(self.matrix, self.matrix <= min_val)
 
     def norm_by_total_intervals(self):
         rows, cols = self.matrix.shape
