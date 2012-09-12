@@ -215,7 +215,13 @@ class HilbertMatrix(HilbertNormalized):
         self.chrom = chrom
 
         # grab the dict of chrom lengths for this genome
-        self.chromdict = pbt.chromsizes(self.genome)
+        if isinstance(self.genome, basestring):
+            self.chromdict = pbt.chromsizes(self.genome)
+        elif isinstance(self.genome, dict):
+            self.chromdict = self.genome
+        else:
+            raise ValueError('`genome` must be either a string assembly name '
+                    ' or a dictionary of chrom:(start, stop)')
 
         if self.chrom != "genome":
             chrom_range_tuple = get_interval_from_string(self.chrom)
@@ -256,7 +262,6 @@ class HilbertMatrix(HilbertNormalized):
         self.incr_column = incr_column
         self.num_intervals = 0
         self.total_interval_length = 0
-        chromdict = pbt.chromsizes(genome)
         chrom_offsets = []
         chrom_names = []
         self.temp_files = []
