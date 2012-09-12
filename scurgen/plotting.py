@@ -7,21 +7,34 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scurgen.hilbert import HilbertMatrix
 
 
-def debug_plot(h):
+def debug_plot(h, verbose=True, nlabels=10):
     """
     Quick plot of a HilbertBase subclass that also labels the first 10 cells
     """
     imshow_kwargs = dict(
         interpolation='nearest',
+        origin='lower',
         cmap=matplotlib.cm.Spectral_r)
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111)
     mappable = ax.imshow(h.matrix, **imshow_kwargs)
     plt.colorbar(mappable)
     x, y, labels = h.curve()
-    ax.plot(x, y, 'k')
-    for i in range(10):
-        ax.text(x[i], y[i], labels[i])
+    row, col = y, x
+    ax.plot(x, y, '0.5')
+    if verbose:
+        for i in range(nlabels):
+            # add chrom coords if it's a HilbertMatrix
+            if isinstance(h, HilbertMatrix):
+                label = 'i=%s\nx=%s, y=%s\nr=%s, c=%s\n%s' \
+                        % (labels[i], x[i], y[i], row[i], col[i],
+                           '%s:%s-%s' % h.xy2chrom(x[i], y[i]))
+            else:
+                label = 'i=%s\nx=%s, y=%s\nr=%s, c=%s' \
+                        % (labels[i], x[i], y[i], row[i], col[i])
+            ax.text(x[i], y[i], label, size=8, verticalalignment='center',
+                    horizontalalignment='center')
+
     ax.axis('tight')
     plt.show()
 
