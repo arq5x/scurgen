@@ -54,6 +54,19 @@ def xy2d(n, x, y):
     return d
 
 
+def rc2d(n, row, col):
+    x = col
+    y = n - row - 1
+    return xy2d(n, x, y)
+
+
+def d2rc(n, d):
+    x, y = d2xy(n, d)
+    col = x
+    row = y
+    return row, col
+
+
 def get_interval_from_string(s):
     chrom_range_pattern   = re.compile('(\S+)\:([0-9]+)\-([0-9]+)')
     
