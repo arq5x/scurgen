@@ -117,8 +117,9 @@ class HilbertBase(object):
             `value`.
         """
         for dist in xrange(d1, d2 + 1):
-            x, y = d2xy(self.m_dim, dist)
-            self.matrix[x, y] = func(self.matrix[x, y], value)
+            # filling in matrix, so use row, col coords
+            row, col = d2rc(self.m_dim, dist)
+            self.matrix[row, col] = func(self.matrix[row, col], value)
 
     def mask_low_values(self, min_val=0):
         self.masked = np.ma.masked_array(self.matrix, self.matrix <= min_val)
@@ -141,18 +142,14 @@ class HilbertBase(object):
 
         In this case the (x, y) coords fall within the center of each cell.
         """
-        # Note: there's probably some more elegant way to do this but this
-        # seems to work...
+        # To be plotted, so use x, y coords instead of row, col coords
         xs, ys = [], []
         for i in range(self.ncells):
             x, y = d2xy(self.m_dim, i)
-            xi = y
-            yi = self.m_dim - x - 1
-            xs.append(xi)
-            ys.append(yi)
+            xs.append(x)
+            ys.append(y)
 
-        # Reverse everything
-        return np.array(xs)[::-1], np.array(ys)[::-1], range(self.ncells)
+        return np.array(xs), np.array(ys), range(self.ncells)
 
 
 class HilbertNormalized(HilbertBase):
