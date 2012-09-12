@@ -125,3 +125,21 @@ def test_xy2d_d2xy():
         x, y = hilbert.d2xy(n, d)
         d2 = hilbert.xy2d(n, x, y)
         assert d == d2
+
+def test_masked():
+    h = hilbert.HilbertBase(16)
+    h.update(0, 5, value=10)
+    h.update(0, 1, value=50)
+
+    assert h.matrix.sum() == 160
+
+    h.mask_low_values(min_val=10)
+
+    # masking should not change the original data
+    assert h.matrix.sum() == 160
+
+    # but the masked one has changed
+    assert h.masked.sum() == 120
+
+    # mask should have only masked 2 cells
+    assert (h.masked.mask == False).sum() == 2
