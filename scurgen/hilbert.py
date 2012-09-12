@@ -25,8 +25,8 @@ def d2xy(n, d):
     Convert a distance into (x,y) coords of the matrix of dimension `n`
     """
     t = d
-    x = y = 0
-
+    x = 0
+    y = 0
     s = 1
     while s < n:
         rx = 1 & (t / 2)
@@ -34,7 +34,7 @@ def d2xy(n, d):
         (x, y) = rot(s, x, y, rx, ry)
         x += (s * rx)
         y += (s * ry)
-        t = t / 4
+        t /= 4
         s *= 2
     return (x, y)
 
@@ -49,7 +49,7 @@ def xy2d(n, x, y):
         rx = (x & s) > 0
         ry = (y & s) > 0
         d += s * s * ((3 * rx) ^ ry)
-        rot(s, x, y, rx, ry)
+        (x, y) = rot(s, x, y, rx, ry)
         s /= 2
     return d
 
