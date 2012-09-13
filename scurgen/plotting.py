@@ -200,6 +200,11 @@ class HilbertGUI(object):
         # Callback changes color scale
         self.radio.on_clicked(self._radio_callback)
 
+        # necessary to capture the canvas before drawing new things to it.
+        # otherwise, old chrom coordinates are left on the canvas.
+        #http://stackoverflow.com/questions/6286731/ \
+        #animating-matplotlib-panel-blit-leaves-old-frames-behind
+        self.fig.canvas.draw()
         self.background = self.fig.canvas.copy_from_bbox(
             self.annotation_ax.bbox)
 
