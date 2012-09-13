@@ -8,8 +8,7 @@ import subprocess
 import bisect
 from pybedtools import genome_registry
 
-    
-    
+
 def rot(n, x, y, rx, ry):
     if (ry == 0):
         if (rx == 1):
@@ -68,15 +67,15 @@ def d2rc(n, d):
 
 
 def get_interval_from_string(s):
-    chrom_range_pattern   = re.compile('(\S+)\:([0-9]+)\-([0-9]+)')
-    
+    chrom_range_pattern = re.compile('(\S+)\:([0-9]+)\-([0-9]+)')
+
     if chrom_range_pattern.search(s):
         (chrom, start, end) = re.findall(chrom_range_pattern, s)[0]
         start = int(start)
         end = int(end)
         return (chrom, start, end)
     else:
-        return None 
+        return None
 
 
 class HilbertBase(object):
@@ -231,7 +230,7 @@ class HilbertMatrix(HilbertNormalized):
             self.chromdict = self.genome
         else:
             raise ValueError('`genome` must be either a string assembly name '
-                    ' or a dictionary of chrom:(start, stop)')
+                             ' or a dictionary of chrom:(start, stop)')
 
         if self.chrom != "genome":
             chrom_range_tuple = get_interval_from_string(self.chrom)
@@ -241,8 +240,8 @@ class HilbertMatrix(HilbertNormalized):
                 self.use_chrom_range = False
 
             else:
-                (self.chrom, self.range_start, self.range_end) = \
-                        chrom_range_tuple
+                (self.chrom, self.range_start, self.range_end) \
+                    = chrom_range_tuple
                 self.chrom_length = self.range_end - self.range_start
                 self.use_chrom_range = True
 
@@ -251,9 +250,9 @@ class HilbertMatrix(HilbertNormalized):
             # using the entire genome for our coordinate system
             self.chrom_length = 0
             curr_offset = 0
-            self.chrom_offsets = {}  
+            self.chrom_offsets = {}
             self.chrom_offsets_list = []
-            self.chrom_names_list = []          
+            self.chrom_names_list = []
             for chrom in self.chromdict:
                 self.chrom_offsets[chrom] = curr_offset
                 self.chrom_offsets_list.append(curr_offset)
@@ -262,21 +261,19 @@ class HilbertMatrix(HilbertNormalized):
                 curr_offset += self.chromdict[chrom][1]
             print "genome size: ",
         print self.chrom_length
-        
+
         super(HilbertMatrix, self).__init__(matrix_dim, self.chrom_length)
-        
+
         print "using matrix of size", self.m_dim, "there are", \
               self.ncells, "cells in the matrix and each cell represents", \
               int(self.dist_per_cell), "base pairs."
-        
+
         self.incr_column = incr_column
         self.num_intervals = 0
         self.total_interval_length = 0
         chrom_offsets = []
         chrom_names = []
         self.temp_files = []
-
-
 
         # populate the matrix with the data contained in self.file
         self.build()
@@ -289,7 +286,7 @@ class HilbertMatrix(HilbertNormalized):
     def _get_intervals(self):
         if not self.file.endswith('.bam'):
             main_file = pbt.BedTool(self.file)
-            
+
             if not self.use_chrom_range:
                 # no range requested, so just use the full file
                 return main_file
@@ -342,12 +339,12 @@ class HilbertMatrix(HilbertNormalized):
         """
         Given an x,y coordinate in the matrix, compute the
         chrom, start and end coordinate that the cell represents.
-        
+
         When plotting a single chromosome, this is merely a matter of
         getting the curve distance that the cell is from the origin
         and then multiplying that distance by the size (in bp) of
         each cell.
-        
+
         For whole genome plots, we need to use the distance to figure out
         which chrom we are in and then from that, figure out how far we are
         into the chrom.
@@ -356,11 +353,11 @@ class HilbertMatrix(HilbertNormalized):
             matrix_dist = xy2d(self.m_dim, x, y)
             chrom = self.chrom
             start = matrix_dist * self.dist_per_cell
-            end = start + self.dist_per_cell 
+            end = start + self.dist_per_cell
         else:
             matrix_dist = xy2d(self.m_dim, x, y)
             bp_dist = matrix_dist * self.dist_per_cell
-            
+
             idx = bisect.bisect_left(self.chrom_offsets_list, bp_dist) - 1
             chrom = self.chrom_names_list[idx]
             chrom_offset = self.chrom_offsets_list[idx]
@@ -386,7 +383,7 @@ class HilbertMatrix(HilbertNormalized):
         for ivl in ivls:
             self.num_intervals += 1
             self.total_interval_length += ivl.end - ivl.start
-            
+
             start = ivl.start
             end = ivl.end
 
@@ -413,7 +410,7 @@ class HilbertMatrix(HilbertNormalized):
         self._cleanup()
 
     def dump_matrix(self):
-        
+
         mat_dump = open(self.file + ".mtx", 'w')
         # header indicates the dimension of the matrix
         mat_dump.write(str(self.m_dim) + '\n')
