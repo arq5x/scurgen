@@ -42,6 +42,19 @@ def debug_plot(h, verbose=True, nlabels=10):
     plt.show()
 
 
+def plot_hilbert(filenames, genome, chrom, dim=128):
+    """
+    Example function for a pre-configured GUI
+    """
+    cm_list = ['Blues', 'Reds', 'Greens', 'Greys', 'YlOrBr']
+    config = dict(dim=dim, genome=genome, chrom=chrom, data=[])
+    for fn, cm in zip(filenames, self.cm_list):
+        config['data'].append(dict(filename=fn, colormap=cm))
+    g = HilbertGUI(config)
+    g.plot()
+    return g
+
+
 class HilbertGUI(object):
     def __init__(self, config, debug=False):
         """
