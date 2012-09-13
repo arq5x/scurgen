@@ -68,45 +68,56 @@ class HilbertGUI(object):
 
         self.debug = debug
 
-    def plot(self):
-        """
-        Does most of the work to set up the figure, axes, and widgets.
-        """
         self.fig = plt.figure(figsize=(8, 8))
+
+    def _make_main_axes(self):
         self.ax = plt.Axes(self.fig, (0.1, 0.1, 0.8, 0.8))
 
+        # formatting: remove ticklabels on the main axes since they're not
+        # meaningful
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
+        self.fig.add_axes(self.ax)
+
+    def _make_colorbar_axes(self):
         # from axes_grid toolkit
         # TODO: eventually support n-way comparisons
         divider = make_axes_locatable(self.ax)
         self.cax1 = divider.append_axes('right', size=0.2, pad=0.3)
         self.cax2 = divider.append_axes('right', size=0.2, pad=0.3)
 
+    def _make_alpha_slider_axes(self):
         # Alpha sliders.
         # TODO: eventually n-way comparisons; these should be appended on the
         # bottom of self.ax?
         self.slider_ax1 = plt.Axes(self.fig, (0.3, 0.07, 0.3, 0.02))
         self.slider_ax2 = plt.Axes(self.fig, (0.3, 0.02, 0.3, 0.02))
+        self.fig.add_axes(self.slider_ax1)
+        self.fig.add_axes(self.slider_ax2)
 
+    def _make_min_slider_axes(self):
         self.min_slider_ax1 = plt.Axes(self.fig, (0.7, 0.07, 0.07, 0.02))
         self.min_slider_ax2 = plt.Axes(self.fig, (0.7, 0.02, 0.07, 0.02))
+        self.fig.add_axes(self.min_slider_ax1)
+        self.fig.add_axes(self.min_slider_ax2)
 
+    def _make_annotation_axes(self):
         self.annotation_ax = plt.Axes(
             self.fig, (0.1, 0.9, 0.8, 0.05), frame_on=False)
         self.annotation_ax.set_xticks([])
         self.annotation_ax.set_yticks([])
-
-        # Radio buttons axes
-        self.radio_ax = plt.Axes(self.fig, (0.85, 0.02, 0.1, 0.1))
-
-        # Add everyone to the fig
-        self.fig.add_axes(self.ax)
-        self.fig.add_axes(self.slider_ax1)
-        self.fig.add_axes(self.slider_ax2)
-        self.fig.add_axes(self.radio_ax)
-        self.fig.add_axes(self.min_slider_ax1)
-        self.fig.add_axes(self.min_slider_ax2)
+        self.background = self.fig.canvas.copy_from_bbox(
+            self.annotation_ax.bbox)
+        self.current_position_label = self.annotation_ax.text(
+            .5, .5, 'position...', horizontalalignment='center',
+            verticalalignment='center', size=10, animated=True)
         self.fig.add_axes(self.annotation_ax)
 
+    def _make_radio_axes(self):
+        self.radio_ax = plt.Axes(self.fig, (0.85, 0.02, 0.1, 0.1))
+        self.fig.add_axes(self.radio_ax)
+
+    def _imshow_matrices(self):
         # plot the matrices on top of each other. Note that only one gets the
         # `picker` kwarg; otherwise the callback will trigger multiple times.
         self.mappable1 = self.ax.imshow(
@@ -123,20 +134,17 @@ class HilbertGUI(object):
         self.mappable1.set_alpha(0.5)
         self.mappable2.set_alpha(0.5)
 
+    def _matrix_colorbars(self):
         # colorbars
         self.cbar1 = plt.colorbar(self.mappable1, cax=self.cax1)
         self.cbar2 = plt.colorbar(self.mappable2, cax=self.cax2)
-
-        # formatting: remove ticklabels on the main axes since they're not
-        # meaningful
-        self.ax.set_xticks([])
-        self.ax.set_yticks([])
 
         # Tweak colorbar labels
         for cbar in [self.cbar1, self.cbar2]:
             for txt in cbar.ax.get_yticklabels():
                 txt.set_size(8)
 
+    def _init_alpha_sliders(self):
         # Set up sliders with sensible default labels
         self.slider1 = Slider(
             self.slider_ax1,
@@ -152,6 +160,12 @@ class HilbertGUI(object):
             valmax=1,
             valinit=0.5)
 
+        self.slider1.poly.set_color('#7a0510')
+        self.slider2.poly.set_color('#08316d')
+        self.slider1.label.set_size(10)
+        self.slider2.label.set_size(10)
+
+    def _init_min_sliders(self):
         self.min_slider1 = Slider(
             self.min_slider_ax1,
             'min',
@@ -166,30 +180,26 @@ class HilbertGUI(object):
             valmax=self.h2.masked.max(),
             valinit=0)
 
+        self.min_slider1.poly.set_color('#7a0510')
+        self.min_slider2.poly.set_color('#08316d')
+        self.min_slider1.label.set_size(10)
+        self.min_slider2.label.set_size(10)
+
+    def _init_radio(self):
         # For controlling log/linear color scale
         self.radio = RadioButtons(
             self.radio_ax,
             labels=['log', 'linear'],
             active=1)
 
-        # These colors look nice with the current colormaps (Reds and Blues)
-        # but TODO: should eventually be configurable
-        self.slider1.poly.set_color('#7a0510')
-        self.min_slider1.poly.set_color('#7a0510')
-        self.slider2.poly.set_color('#08316d')
-        self.min_slider2.poly.set_color('#08316d')
-
-        # Label tweaks
-        for slider in [self.slider1, self.slider2, self.min_slider1,
-                       self.min_slider2]:
-            slider.label.set_size(10)
-
-        # Callback changes alpha
+    def _make_connections(self):
+        # Alpha sliders
         self.slider1.on_changed(
             self._slider_callback_factory(self.mappable1, self.cbar1))
         self.slider2.on_changed(
             self._slider_callback_factory(self.mappable2, self.cbar2))
 
+        # Min sliders change thresh
         self.min_slider1.on_changed(
             self._min_slider_callback_factory(
                 self.h1, self.mappable1, self.cbar1))
@@ -197,17 +207,35 @@ class HilbertGUI(object):
             self._min_slider_callback_factory(
                 self.h2, self.mappable2, self.cbar2))
 
-        # Callback changes color scale
+        # Radio callback changes color scale
         self.radio.on_clicked(self._radio_callback)
 
-        self.background = self.fig.canvas.copy_from_bbox(
-            self.annotation_ax.bbox)
-
-        self.current_position_label = self.annotation_ax.text(
-            .5, .5, 'position...', horizontalalignment='center',
-            verticalalignment='center', size=10, animated=True)
         self.fig.canvas.mpl_connect('motion_notify_event', self._coord_tracker)
         self.fig.canvas.mpl_connect('pick_event', self._coord_callback)
+
+    def plot(self):
+        """
+        Does most of the work to set up the figure, axes, and widgets.
+        """
+        # These methods construct axes in the right places
+        self._make_main_axes()
+        self._make_colorbar_axes()
+        self._make_alpha_slider_axes()
+        self._make_min_slider_axes()
+        self._make_annotation_axes()
+        self._make_radio_axes()
+
+        # Plot the matrices and their colorbars
+        self._imshow_matrices()
+        self._matrix_colorbars()
+
+        # Initialize the various widgets
+        self._init_alpha_sliders()
+        self._init_min_sliders()
+        self._init_radio()
+
+        # Connect callbacks to events
+        self._make_connections()
 
     def _coord_tracker(self, event):
         """
