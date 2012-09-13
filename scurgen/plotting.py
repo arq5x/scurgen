@@ -179,6 +179,12 @@ class HilbertGUI(object):
             self.fig, (0.1, 0.9, 0.8, 0.05), frame_on=False)
         self.annotation_ax.set_xticks([])
         self.annotation_ax.set_yticks([])
+
+        # necessary to capture the canvas before drawing new things to it.
+        # otherwise, old chrom coordinates are left on the canvas.
+        #http://stackoverflow.com/questions/6286731/ \
+        #animating-matplotlib-panel-blit-leaves-old-frames-behind
+        self.fig.canvas.draw()
         self.background = self.fig.canvas.copy_from_bbox(
             self.annotation_ax.bbox)
         self.current_position_label = self.annotation_ax.text(
