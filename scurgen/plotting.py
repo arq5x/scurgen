@@ -45,9 +45,48 @@ def debug_plot(h, verbose=True, nlabels=10):
 class HilbertGUI(object):
     def __init__(self, config, debug=False):
         """
-        :param configs:
+        :param config:
             If a string, then treat it as a filename of a YAML config file; if
-            a dictionary then treat it as the config itself.
+            a dictionary then treat it as the config dictionary itself.
+
+            For each dictionary in `config['data']`, a new matrix, colorbar,
+            and slider will be created using the filename and colormap
+            specified.  The matrices for the files will be plotted on the same
+            Axes.
+
+            There is no limit, but colors get complicated quickly
+            with, say, >3 files.
+
+            Example config dict::
+
+                {
+                 'dim': 128,
+                 'genome': 'hg19',
+                 'chrom': 'chr10',
+                 'data': [
+                       {'filename': '../data/cpg-islands.hg19.chr10.bed',
+                        'colormap': 'Blues'},
+
+                       {'filename': '../data/refseq.chr10.exons.bed',
+                        'colormap': 'Reds'}
+
+                         ]
+                }
+
+            Example YAML file::
+
+                dim: 128
+                chrom: chr10
+                genome: hg19
+                data:
+                    -
+                        filename: ../data/cpg-islands.hg19.chr10.bed
+                        colormap: Blues
+
+                    -
+                        filename: ../data/refseq.chr10.exons.bed
+                        colormap: Reds
+
 
         :param debug:
             If True, then print some extra debugging info
