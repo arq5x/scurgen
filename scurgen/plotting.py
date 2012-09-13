@@ -226,7 +226,6 @@ class HilbertGUI(object):
         # Set up sliders with sensible default labels
         self.sliders = []
 
-
         for i in range(self.n):
             fn = self.config['data'][i]['filename']
             label = '%s: %s' % (string.letters[i], os.path.basename(fn))
@@ -350,16 +349,22 @@ class HilbertGUI(object):
                 # Genomic coords from (x,y)
                 s = '%s:%s-%s' % self.hilberts[0].xy2chrom(xi, yi)
 
-                # Values of the underlying matrices.  Note xi,yi swap for row,
-                # col coords
-                #s += ' [a=%s; b=%s]' \
-                #    % (self.hilberts[0].matrix[yi, xi], self.h2.matrix[yi, xi])
+                v = []
+                for letter, h in zip(string.letters, self.hilberts):
+                    v.append('%s=%s' % (letter, h.matrix[yi, xi]))
+                s += self._xy_to_value_string(xi, yi)
 
         # Update text, redraw just the text object, and blit the background
         # previously saved
         self.current_position_label.set_text(s)
         self.annotation_ax.draw_artist(self.current_position_label)
         self.fig.canvas.blit(self.annotation_ax.bbox)
+
+    def _xy_to_value_string(self, x, y):
+        v = []
+        for letter, h in zip(string.letters, self.hilberts):
+            v.append('%s=%s' % (letter, h.matrix[y, x]))
+        return '; '.join(v)
 
     def _coord_callback(self, event):
         x = event.mouseevent.xdata
@@ -372,8 +377,7 @@ class HilbertGUI(object):
             print 'mouse y:', y, 'yi:', yi
         s = '%s:%s-%s' % self.hilberts[0].xy2chrom(xi, yi)
 
-        # Note that xi=cols and yi=rows, hence the indexing switcharoo
-        #s += ' [a=%s; b=%s]' % (self.h1.matrix[yi, xi], self.h2.matrix[yi, xi])
+        s += '\n' + self._xy_to_value_string(xi, yi)
         print s
         sys.stdout.flush()
 
@@ -411,8 +415,8 @@ class HilbertGUI(object):
         """
         for i in range(self.n):
             norm = matplotlib.colors.LogNorm(
-            vmin=self.hilberts[i].masked.min(),
-            vmax=self.hilberts[i].masked.max())
+                vmin=self.hilberts[i].masked.min(),
+                vmax=self.hilberts[i].masked.max())
             self.mappables[i].set_norm(norm)
             self.cbars[i].set_norm(norm)
             self.cbars[i].update_normal(self.mappables[i])
@@ -424,13 +428,12 @@ class HilbertGUI(object):
         """
         for i in range(self.n):
             norm = matplotlib.colors.Normalize(
-            vmin=self.hilberts[i].masked.min(),
-            vmax=self.hilberts[i].masked.max())
+                vmin=self.hilberts[i].masked.min(),
+                vmax=self.hilberts[i].masked.max())
             self.mappables[i].set_norm(norm)
             self.cbars[i].set_norm(norm)
             self.cbars[i].update_normal(self.mappables[i])
         plt.draw()
-
 
 
 if __name__ == "__main__":
