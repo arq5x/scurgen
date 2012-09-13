@@ -16,7 +16,7 @@ def debug_plot(h, verbose=True, nlabels=10):
     """
     imshow_kwargs = dict(
         interpolation='nearest',
-        origin='lower',
+        origin='upper',
         cmap=matplotlib.cm.Spectral_r)
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111)
@@ -208,7 +208,7 @@ class HilbertGUI(object):
                 picker = None
             self.mappables.append(
                 self.ax.imshow(
-                    h.masked, interpolation='nearest', origin='lower',
+                    h.masked, interpolation='nearest', origin='upper',
                     cmap=cmap, picker=picker))
 
         # Initialize alphas
