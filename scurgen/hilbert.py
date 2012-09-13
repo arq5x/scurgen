@@ -79,18 +79,19 @@ def get_interval_from_string(s):
 
 
 class HilbertBase(object):
-    def __init__(self, m_dim):
+    def __init__(self, matrix_dim):
         """
         Initializes a basic Hilbert curve.
 
-        :param m_dim:
+        :param matrix_dim:
             The number of dimensions on a side (power of 2)
         """
-        if np.log2(m_dim) % 1 != 0:
-            raise ValueError('m_dim %s not a power of 2' % m_dim)
-        self.m_dim = m_dim
-        self.ncells = m_dim * m_dim
-        self.matrix = np.zeros((self.m_dim, self.m_dim), dtype=np.float)
+        if np.log2(matrix_dim) % 1 != 0:
+            raise ValueError('matrix_dim %s not a power of 2' % matrix_dim)
+        self.matrix_dim = matrix_dim
+        self.ncells = matrix_dim * matrix_dim
+        self.matrix = np.zeros((self.matrix_dim, self.matrix_dim), \
+                                dtype=np.float)
         self.masked = self.matrix
 
     def update(self, d1, d2, value=1, func=np.add):
@@ -117,7 +118,7 @@ class HilbertBase(object):
         """
         for dist in xrange(d1, d2 + 1):
             # filling in matrix, so use row, col coords
-            row, col = d2rc(self.m_dim, dist)
+            row, col = d2rc(self.matrix_dim, dist)
             self.matrix[row, col] = func(self.matrix[row, col], value)
 
     def mask_low_values(self, min_val=0):
@@ -144,7 +145,7 @@ class HilbertBase(object):
         # To be plotted, so use x, y coords instead of row, col coords
         xs, ys = [], []
         for i in range(self.ncells):
-            x, y = d2xy(self.m_dim, i)
+            x, y = d2xy(self.matrix_dim, i)
             xs.append(x)
             ys.append(y)
 
@@ -152,18 +153,18 @@ class HilbertBase(object):
 
 
 class HilbertNormalized(HilbertBase):
-    def __init__(self, m_dim, length):
+    def __init__(self, matrix_dim, length):
         """
         Hilbert curve class that handles distance in arbitrary units (e.g.,
         genomic bp) instead of in cell numbers.
 
-        :param m_dim:
+        :param matrix_dim:
             The number of dimensions on a side (power of 2)
 
         :param length:
             The total length represented by this curve
         """
-        super(HilbertNormalized, self).__init__(m_dim)
+        super(HilbertNormalized, self).__init__(matrix_dim)
         self.length = length
         self.norm_factor = self.length / float(self.ncells)
 
@@ -222,7 +223,8 @@ class HilbertMatrix(HilbertNormalized):
         self.file = file
         self.genome = genome
         self.chrom = chrom
-
+        self.use_chrom_range = False
+        
         # grab the dict of chrom lengths for this genome
         if isinstance(self.genome, basestring):
             self.chromdict = pbt.chromsizes(self.genome)
@@ -230,18 +232,16 @@ class HilbertMatrix(HilbertNormalized):
             self.chromdict = self.genome
         else:
             raise ValueError('`genome` must be either a string assembly name '
-                             ' or a dictionary of chrom:(start, stop)')
+                    ' or a dictionary of chrom:(start, stop)')
 
         if self.chrom != "genome":
             chrom_range_tuple = get_interval_from_string(self.chrom)
             if chrom_range_tuple is None:
                 # grab the length of the requested chromosome
                 self.chrom_length = self.chromdict[self.chrom][1]
-                self.use_chrom_range = False
-
             else:
-                (self.chrom, self.range_start, self.range_end) \
-                    = chrom_range_tuple
+                (self.chrom, self.range_start, self.range_end) = \
+                        chrom_range_tuple
                 self.chrom_length = self.range_end - self.range_start
                 self.use_chrom_range = True
 
@@ -263,8 +263,8 @@ class HilbertMatrix(HilbertNormalized):
         print self.chrom_length
 
         super(HilbertMatrix, self).__init__(matrix_dim, self.chrom_length)
-
-        print "using matrix of size", self.m_dim, "there are", \
+        
+        print "using matrix of size", self.matrix_dim, "there are", \
               self.ncells, "cells in the matrix and each cell represents", \
               int(self.dist_per_cell), "base pairs."
 
@@ -274,6 +274,8 @@ class HilbertMatrix(HilbertNormalized):
         chrom_offsets = []
         chrom_names = []
         self.temp_files = []
+
+
 
         # populate the matrix with the data contained in self.file
         self.build()
@@ -350,12 +352,12 @@ class HilbertMatrix(HilbertNormalized):
         into the chrom.
         """
         if self.chrom != "genome":
-            matrix_dist = xy2d(self.m_dim, x, y)
+            matrix_dist = xy2d(self.matrix_dim, x, y)
             chrom = self.chrom
             start = matrix_dist * self.dist_per_cell
-            end = start + self.dist_per_cell
+            end = start + self.dist_per_cell 
         else:
-            matrix_dist = xy2d(self.m_dim, x, y)
+            matrix_dist = xy2d(self.matrix_dim, x, y)
             bp_dist = matrix_dist * self.dist_per_cell
 
             idx = bisect.bisect_left(self.chrom_offsets_list, bp_dist) - 1
@@ -413,9 +415,9 @@ class HilbertMatrix(HilbertNormalized):
 
         mat_dump = open(self.file + ".mtx", 'w')
         # header indicates the dimension of the matrix
-        mat_dump.write(str(self.m_dim) + '\n')
-        for r in xrange(self.m_dim):
-            for c in xrange(self.m_dim):
+        mat_dump.write(str(self.matrix_dim) + '\n')
+        for r in xrange(self.matrix_dim):
+            for c in xrange(self.matrix_dim):
                 (chrom, start, end) = self.get_chrom_range(r, c)
                 mat_dump.write('\t'.join(str(s) for s in [r, c,
                                          self.matrix[r][c],
