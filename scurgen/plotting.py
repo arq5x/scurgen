@@ -111,12 +111,12 @@ class HilbertGUI(object):
         # `picker` kwarg; otherwise the callback will trigger multiple times.
         self.mappable1 = self.ax.imshow(
             self.h1.masked, interpolation='nearest',
-            origin='lower',
+            origin='upper',
             cmap=matplotlib.cm.Reds, picker=5)
 
         self.mappable2 = self.ax.imshow(
             self.h2.masked, interpolation='nearest',
-            origin='lower',
+            origin='upper',
             cmap=matplotlib.cm.Blues)
 
         # Initialize alphas
