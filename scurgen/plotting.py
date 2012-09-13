@@ -72,8 +72,8 @@ class HilbertGUI(object):
         """
         Does most of the work to set up the figure, axes, and widgets.
         """
-        self.fig = plt.figure()
-        self.ax = plt.Axes(self.fig, (0.1, 0.15, 0.8, 0.8))
+        self.fig = plt.figure(figsize=(8, 8))
+        self.ax = plt.Axes(self.fig, (0.1, 0.1, 0.8, 0.8))
 
         # from axes_grid toolkit
         # TODO: eventually support n-way comparisons
@@ -90,6 +90,11 @@ class HilbertGUI(object):
         self.min_slider_ax1 = plt.Axes(self.fig, (0.7, 0.07, 0.07, 0.02))
         self.min_slider_ax2 = plt.Axes(self.fig, (0.7, 0.02, 0.07, 0.02))
 
+        self.annotation_ax = plt.Axes(
+            self.fig, (0.1, 0.9, 0.8, 0.05), frame_on=False)
+        self.annotation_ax.set_xticks([])
+        self.annotation_ax.set_yticks([])
+
         # Radio buttons axes
         self.radio_ax = plt.Axes(self.fig, (0.85, 0.02, 0.1, 0.1))
 
@@ -100,6 +105,7 @@ class HilbertGUI(object):
         self.fig.add_axes(self.radio_ax)
         self.fig.add_axes(self.min_slider_ax1)
         self.fig.add_axes(self.min_slider_ax2)
+        self.fig.add_axes(self.annotation_ax)
 
         # plot the matrices on top of each other. Note that only one gets the
         # `picker` kwarg; otherwise the callback will trigger multiple times.
@@ -194,7 +200,58 @@ class HilbertGUI(object):
         # Callback changes color scale
         self.radio.on_clicked(self._radio_callback)
 
+        self.background = self.fig.canvas.copy_from_bbox(
+            self.annotation_ax.bbox)
+
+        self.current_position_label = self.annotation_ax.text(
+            .5, .5, 'position...', horizontalalignment='center',
+            verticalalignment='center', size=10, animated=True)
+        self.fig.canvas.mpl_connect('motion_notify_event', self._coord_tracker)
         self.fig.canvas.mpl_connect('pick_event', self._coord_callback)
+
+    def _coord_tracker(self, event):
+        """
+        Callback that updates text based on the genomic coords of the current
+        mouse position.
+        """
+        # Restore original background
+        self.fig.canvas.restore_region(self.background)
+
+        # These will be None if the mouse is not in an Axes, so the string
+        # should be empty.
+        #
+        # Also, make sure we're in the imshow Axes -- don't want crazy genomic
+        # coords from being in the colorbar or annotation Axes
+        x = event.xdata
+        y = event.ydata
+        if (x is None) or (y is None) or (event.inaxes is not self.ax):
+            s = ""
+
+        # Get matrix coords
+        else:
+            xi = int(round(x))
+            yi = int(round(y))
+
+            # If you move the mouse off the edge of the main Axes, rounding to
+            # the nearest row or col may get you a value that's greater than
+            # the number of rows/cols.  In this case, treat it similar to being
+            # out of the Axes, with an empty string.
+            if (xi >= self.h1.m_dim) or (yi >= self.h1.m_dim):
+                s = ""
+            else:
+                # Genomic coords from (x,y)
+                s = '%s:%s-%s' % self.h1.xy2chrom(xi, yi)
+
+                # Values of the underlying matrices.  Note xi,yi swap for row,
+                # col coords
+                s += ' [a=%s; b=%s]' \
+                    % (self.h1.matrix[yi, xi], self.h2.matrix[yi, xi])
+
+        # Update text, redraw just the text object, and blit the background
+        # previously saved
+        self.current_position_label.set_text(s)
+        self.annotation_ax.draw_artist(self.current_position_label)
+        self.fig.canvas.blit(self.annotation_ax.bbox)
 
     def _coord_callback(self, event):
         x = event.mouseevent.xdata
