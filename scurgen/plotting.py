@@ -158,7 +158,7 @@ class HilbertGUI(object):
 
     def _make_colorbar_axes(self):
         cax_total_width = 0.4
-        cax_total_padding = 0.4
+        cax_total_padding = 0.8
         width = cax_total_width / self.n
         pad = cax_total_padding / self.n
         self.caxes = []
