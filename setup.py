@@ -24,9 +24,11 @@ setup(
                           'matplotlib>=1.0.0', 'PIL>=1.1.7'],
         requires = ['python (>=2.5, <3.0)'],
         packages=['scurgen',
-                  'scurgen.scripts'],
+                  'scurgen.scripts',
+                  'scurgen.data'],
         author="Aaron Quinlan",
-        description='A tool for exploring genomic data with space filling curves',
+        description='A tool for exploring genomic data with space \
+                    filling curves',
         long_description=long_description,
         url="none",
         package_dir = {'scurgen': "scurgen"},

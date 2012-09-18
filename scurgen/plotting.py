@@ -9,6 +9,12 @@ from matplotlib.widgets import Cursor, Slider, RadioButtons
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scurgen.hilbert import HilbertMatrix
 
+def data_dir():
+    """
+    Returns the data directory that contains example files for tests and
+    documentation.
+    """
+    return os.path.join(os.path.dirname(__file__), 'data')
 
 def debug_plot(h, verbose=True, nlabels=10):
     """
@@ -442,9 +448,7 @@ class HilbertGUI(object):
         plt.draw()
 
 
-if __name__ == "__main__":
-    fn1 = '../data/cpg-islands.hg19.chr10.bed'
-    fn2 = '../data/refseq.chr10.exons.bed'
-    g = HilbertGUI('config.yaml')
+def gui_main(parser, args):
+    g = HilbertGUI(args.config_file)
     g.plot()
     plt.show()

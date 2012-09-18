@@ -9,7 +9,7 @@ from pylab import *
 import Image
 import argparse
 import hilbert as hb
-
+import plotting as gui
 
 def plot(parser, args):
     hm = hb.HilbertMatrix(args.file, args.genome, args.chrom, args.dim,
@@ -17,7 +17,7 @@ def plot(parser, args):
     hm.mask_low_values(args.min_mask)
     cmap = cm.get_cmap(args.cmap, 12)
     
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8, 8))
     hilbert = plt.imshow(hm.matrix, interpolation='nearest', cmap=cmap)
     plt.colorbar()
     
@@ -40,24 +40,20 @@ def combine(parser, args):
     hm1.mask_low_values()
     hm2.mask_low_values()
     
-    # TO DO, set 0 == white (e.g., for centromere.)
-    
-    cmap1 = cm.get_cmap(args.cmap1, 5)
-    cmap2 = cm.get_cmap(args.cmap2, 5)
-    
-
+    cmap1 = cm.get_cmap(args.cmap1, 12)
+    cmap2 = cm.get_cmap(args.cmap2, 12)
     
     cmap1.set_bad('w')
     cmap2.set_bad('w')
     
-    # build fig1
-    fig = plt.figure()
+    ## build fig1
+    plt.show()
     hilb1 = plt.imshow(hm1.matrix, interpolation='nearest', cmap=cmap1)
     fig.savefig("_a.png", dpi=args.dpi, transparent=True)
     
     # build fig2
     fig = plt.figure()
-
+    
     hilb2 = plt.imshow(hm2.matrix, interpolation='nearest', cmap=cmap2)
     fig.savefig("_b.png", dpi=args.dpi, transparent=True)
     
@@ -197,6 +193,17 @@ def main():
     parser_combine.set_defaults(func=combine)
     
     
+    #########################################
+    # scurgeon 'gui'
+    #########################################
+    parser_gui = subparsers.add_parser('gui',  help='launch scurgen GUI')
+    parser_gui.add_argument('config_file', metavar='YAML file',  
+                            help='The YAML config file to use for the GUI.',
+                            default='config.yaml')
+                                    
+    parser_gui.set_defaults(func=gui.gui_main)
+
+
     #########################################
     # scurgeon
     #########################################    

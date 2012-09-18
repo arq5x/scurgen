@@ -1,0 +1,16 @@
+dim: 128
+chrom: chr10
+genome: hg19
+data:
+    -
+        filename: scurgen/data/cpg-islands.hg19.chr10.bed
+        colormap: Blues
+
+    -
+        filename: scurgen/data/refseq.chr10.exons.bed
+        colormap: Reds
+
+    -
+        filename: scurgen/data/phastcons.chr10.bed
+        colormap: Spectral_r
+
