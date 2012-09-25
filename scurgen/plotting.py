@@ -5,7 +5,7 @@ import string
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
-from matplotlib.widgets import Cursor, Slider, RadioButtons
+from matplotlib.widgets import Cursor, Slider, RadioButtons, CheckButtons
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scurgen.hilbert import HilbertMatrix
 
@@ -198,6 +198,10 @@ class HilbertGUI(object):
             verticalalignment='center', size=10, animated=True)
         self.fig.add_axes(self.annotation_ax)
 
+    def _make_checkbox_axes(self):
+        self.check_ax = plt.Axes(self.fig, (0.02, 0.02, 0.6, 0.1))
+        self.fig.add_axes(self.check_ax)
+
     def _make_radio_axes(self):
         self.radio_ax = plt.Axes(self.fig, (0.85, 0.02, 0.1, 0.1))
         self.fig.add_axes(self.radio_ax)
@@ -274,6 +278,18 @@ class HilbertGUI(object):
         self.min_slider1.label.set_size(10)
         self.min_slider2.label.set_size(10)
 
+    def _init_checks(self):
+        self.check_labels = []
+        self.check_display = []
+        for i in range(self.n):
+            fn = self.config['data'][i]['filename']
+            label = '%s' % (os.path.basename(fn))
+            self.check_labels.append(label)
+            self.check_display.append(self.mappables[i])
+
+        self.checks = CheckButtons(self.check_ax, self.check_labels, \
+                                   self.check_display)
+        
     def _init_radio(self):
         # For controlling log/linear color scale
         self.radio = RadioButtons(
@@ -300,7 +316,9 @@ class HilbertGUI(object):
 
         # Radio callback changes color scale
         self.radio.on_clicked(self._radio_callback)
-
+        #Checkbox callback changes what hilberts are shown
+        self.checks.on_clicked(self._check_callback)
+        
         self.fig.canvas.mpl_connect('motion_notify_event', self._coord_tracker)
         self.fig.canvas.mpl_connect('pick_event', self._coord_callback)
 
@@ -315,6 +333,7 @@ class HilbertGUI(object):
         self._make_min_slider_axes()
         self._make_annotation_axes()
         self._make_radio_axes()
+        self._make_checkbox_axes()
 
         # Plot the matrices and their colorbars
         self._imshow_matrices()
@@ -324,6 +343,7 @@ class HilbertGUI(object):
         self._init_alpha_sliders()
         self._init_min_sliders()
         self._init_radio()
+        self._init_checks()
 
         # Connect callbacks to events
         self._make_connections()
@@ -402,6 +422,13 @@ class HilbertGUI(object):
         else:
             raise ValueError("unspecified label for radio button")
 
+    def _check_callback(self, label):
+        for i in xrange(len(self.check_labels)):
+            if label == self.check_labels[i]:
+                self.mappables[i].set_visible(not \
+                        self.mappables[i].get_visible())
+        plt.draw()
+        
     def _slider_callback_factory(self, mappable, cbar):
         """
         Given a mappable (i.e., object returned from imshow()), return
