@@ -8,6 +8,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Cursor, Slider, RadioButtons
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import pybedtools as pbt
 from scurgen.hilbert import HilbertMatrix
 
 
@@ -157,8 +158,10 @@ class HilbertGUI(object):
         chroms = self.config['chrom']
 
         if chroms == 'genome':
-        self.hilberts = []
-        self.colormaps = []
+            chroms = pbt.chromsizes(self.config['genome']).default.keys()
+
+        if isinstance(chroms, basestring):
+            chroms = [chroms]
 
         for chunk in self.config['data']:
             fn = chunk['filename']
