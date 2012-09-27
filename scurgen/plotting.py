@@ -2,6 +2,7 @@ import os
 import yaml
 import sys
 import string
+from collections import defaultdict
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
@@ -124,16 +125,48 @@ class HilbertGUI(object):
             genome=self.config['genome'],
             chrom=self.config['chrom'])
 
+        # self.hilberts is keyed first by chrom, then by filename; the final
+        # leaves are HilbertMatrix objects
+        #
+        # self.hilberts = {
+        #   chrom1: {
+        #               filename1: HM,
+        #               filename2: HM,
+        #               filename3: HM,
+        #           },
+        #   chrom2: {
+        #               filename1: HM,
+        #               filename2: HM,
+        #               filename3: HM,
+        #           },
+        # }
+        #
+        #
+        self.hilberts = defaultdict(dict)
+
+        # colormaps are consistent across all chroms, so it's just keyed by
+        # filename:
+        #
+        # self.colormaps = {
+        #   filename1: cmap1,
+        #   filename2: cmap2,
+        #   filename3: cmap3
+        # }
+        self.colormaps = {}
+
+        chroms = self.config['chrom']
+
+        if chroms == 'genome':
         self.hilberts = []
         self.colormaps = []
 
         for chunk in self.config['data']:
-            self.hilberts.append(
-                HilbertMatrix(chunk['filename'], **hilbert_matrix_kwargs))
-            self.colormaps.append(getattr(matplotlib.cm, chunk['colormap']))
-
-        for h in self.hilberts:
-            h.mask_low_values()
+            fn = chunk['filename']
+            self.colormaps[fn] = getattr(matplotlib.cm, chunk['colormap'])
+            for chrom in chroms:
+                hm = HilbertMatrix(fn, chrom=chrom, **hilbert_matrix_kwargs))
+                hm.mask_low_values()
+                self.hilberts[chrom][fn] = hm
 
         self.debug = debug
         self.n = len(self.config['data'])
