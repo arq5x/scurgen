@@ -167,12 +167,12 @@ class HilbertGUI(object):
             fn = chunk['filename']
             self.colormaps[fn] = getattr(matplotlib.cm, chunk['colormap'])
             for chrom in chroms:
-                hm = HilbertMatrix(fn, chrom=chrom, **hilbert_matrix_kwargs))
+                hm = HilbertMatrix(fn, chrom=chrom, **hilbert_matrix_kwargs)
                 hm.mask_low_values()
                 self.hilberts[chrom][fn] = hm
 
         self.debug = debug
-        self.n = len(self.config['data'])
+        self.nfiles = len(self.config['data'])
         self.fig = plt.figure(figsize=(8, 8))
 
     def _parse_config(self, config):
@@ -198,17 +198,17 @@ class HilbertGUI(object):
     def _make_colorbar_axes(self):
         cax_total_width = 0.4
         cax_total_padding = 0.8
-        width = cax_total_width / self.n
-        pad = cax_total_padding / self.n
+        width = cax_total_width / self.nfiles
+        pad = cax_total_padding / self.nfiles
         self.caxes = []
-        for i in range(self.n):
+        for i in range(self.nfiles):
             self.caxes.append(
                 self.divider.append_axes('right', size=width, pad=pad))
 
     def _make_alpha_slider_axes(self):
         # Alpha sliders.
         self.slider_axes = []
-        for i in range(self.n):
+        for i in range(self.nfiles):
             self.slider_axes.append(
                 self.divider.append_axes('bottom', size=0.1, pad=0.1))
 
@@ -244,7 +244,7 @@ class HilbertGUI(object):
     def _imshow_matrices(self):
         self.mappables = []
 
-        for i in range(self.n):
+        for i in range(self.nfiles):
             h = self.hilberts[i]
             cmap = self.colormaps[i]
             if i == 0:
@@ -263,7 +263,7 @@ class HilbertGUI(object):
     def _matrix_colorbars(self):
         # colorbars
         self.cbars = []
-        for i in range(self.n):
+        for i in range(self.nfiles):
             m = self.mappables[i]
             cax = self.caxes[i]
             self.cbars.append(plt.colorbar(m, cax=cax))
@@ -277,7 +277,7 @@ class HilbertGUI(object):
         # Set up sliders with sensible default labels
         self.sliders = []
 
-        for i in range(self.n):
+        for i in range(self.nfiles):
             fn = self.config['data'][i]['filename']
             label = '%s: %s' % (string.letters[i], os.path.basename(fn))
             slider = Slider(
@@ -322,7 +322,7 @@ class HilbertGUI(object):
 
     def _make_connections(self):
         # Alpha sliders
-        for i in range(self.n):
+        for i in range(self.nfiles):
             self.sliders[i].on_changed(
                 self._slider_callback_factory(
                     self.mappables[i], self.cbars[i]))
@@ -464,7 +464,7 @@ class HilbertGUI(object):
         """
         Update colomaps of the plotted images to use log-scaled color
         """
-        for i in range(self.n):
+        for i in range(self.nfiles):
             norm = matplotlib.colors.LogNorm(
                 vmin=self.hilberts[i].masked.min(),
                 vmax=self.hilberts[i].masked.max())
@@ -477,7 +477,7 @@ class HilbertGUI(object):
         """
         Update colormaps of the plotted images to use linear-scaled color
         """
-        for i in range(self.n):
+        for i in range(self.nfiles):
             norm = matplotlib.colors.Normalize(
                 vmin=self.hilberts[i].masked.min(),
                 vmax=self.hilberts[i].masked.max())
