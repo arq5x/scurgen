@@ -9,12 +9,14 @@ from matplotlib.widgets import Cursor, Slider, RadioButtons
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scurgen.hilbert import HilbertMatrix
 
+
 def data_dir():
     """
     Returns the data directory that contains example files for tests and
     documentation.
     """
     return os.path.join(os.path.dirname(__file__), 'data')
+
 
 def debug_plot(h, verbose=True, nlabels=10):
     """
@@ -117,7 +119,7 @@ class HilbertGUI(object):
         self.config = self._parse_config(config)
         self.matrix_dim = self.config['dim']
 
-        kwargs = dict(
+        hilbert_matrix_kwargs = dict(
             matrix_dim=self.config['dim'],
             genome=self.config['genome'],
             chrom=self.config['chrom'])
@@ -126,7 +128,8 @@ class HilbertGUI(object):
         self.colormaps = []
 
         for chunk in self.config['data']:
-            self.hilberts.append(HilbertMatrix(chunk['filename'], **kwargs))
+            self.hilberts.append(
+                HilbertMatrix(chunk['filename'], **hilbert_matrix_kwargs))
             self.colormaps.append(getattr(matplotlib.cm, chunk['colormap']))
 
         for h in self.hilberts:
