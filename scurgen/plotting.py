@@ -345,18 +345,6 @@ class HilbertGUI(object):
 
         # TODO: it would be a nice touch if slider color == max cmap color
 
-    def _init_checks(self):
-        self.check_labels = []
-        self.check_display = []
-        for i in range(self.n):
-            fn = self.config['data'][i]['filename']
-            label = '%s' % (os.path.basename(fn))
-            self.check_labels.append(label)
-            self.check_display.append(self.mappables[i])
-
-        self.checks = CheckButtons(self.check_ax, self.check_labels, \
-                                   self.check_display)
-        
     def _init_radio(self):
         """
         Add radio buttons to the radio ax for color scale.
