@@ -2,12 +2,16 @@ import os
 import yaml
 import sys
 import string
+from collections import defaultdict
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
-from matplotlib.widgets import Cursor, Slider, RadioButtons, CheckButtons
+from matplotlib.widgets import Slider, RadioButtons
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.gridspec as gs
+import pybedtools as pbt
 from scurgen.hilbert import HilbertMatrix
+
 
 def data_dir():
     """
@@ -15,6 +19,7 @@ def data_dir():
     documentation.
     """
     return os.path.join(os.path.dirname(__file__), 'data')
+
 
 def debug_plot(h, verbose=True, nlabels=10):
     """
@@ -117,24 +122,61 @@ class HilbertGUI(object):
         self.config = self._parse_config(config)
         self.matrix_dim = self.config['dim']
 
-        kwargs = dict(
+        hilbert_matrix_kwargs = dict(
             matrix_dim=self.config['dim'],
-            genome=self.config['genome'],
-            chrom=self.config['chrom'])
+            genome=self.config['genome'])
 
-        self.hilberts = []
-        self.colormaps = []
+        # self.hilberts is keyed first by chrom, then by filename; the final
+        # leaves are HilbertMatrix objects
+        #
+        # self.hilberts = {
+        #   chrom1: {
+        #               filename1: HM,
+        #               filename2: HM,
+        #               filename3: HM,
+        #           },
+        #   chrom2: {
+        #               filename1: HM,
+        #               filename2: HM,
+        #               filename3: HM,
+        #           },
+        # }
+        #
+        #
+        self.hilberts = defaultdict(dict)
 
+        # colormaps are consistent across all chroms, so it's just keyed by
+        # filename:
+        #
+        # self.colormaps = {
+        #   filename1: cmap1,
+        #   filename2: cmap2,
+        #   filename3: cmap3
+        # }
+        self.colormaps = {}
+
+        chroms = self.config['chrom']
+
+        if chroms == 'genome':
+            chroms = pbt.chromsizes(self.config['genome']).default.keys()
+
+        if isinstance(chroms, basestring):
+            chroms = [chroms]
+
+        self.chroms = chroms
+        self.fns = []
         for chunk in self.config['data']:
-            self.hilberts.append(HilbertMatrix(chunk['filename'], **kwargs))
-            self.colormaps.append(getattr(matplotlib.cm, chunk['colormap']))
-
-        for h in self.hilberts:
-            h.mask_low_values()
+            fn = chunk['filename']
+            self.fns.append(fn)
+            self.colormaps[fn] = getattr(matplotlib.cm, chunk['colormap'])
+            for chrom in self.chroms:
+                hm = HilbertMatrix(fn, chrom=chrom, **hilbert_matrix_kwargs)
+                hm.mask_low_values()
+                self.hilberts[chrom][fn] = hm
 
         self.debug = debug
-        self.n = len(self.config['data'])
-        self.fig = plt.figure(figsize=(8, 8))
+        self.nfiles = len(self.config['data'])
+        self.nchroms = len(chroms)
 
     def _parse_config(self, config):
         if isinstance(config, basestring):
@@ -146,43 +188,123 @@ class HilbertGUI(object):
         # TODO: more work on validation
         assert 'data' in config
 
-    def _make_main_axes(self):
-        self.ax = plt.Axes(self.fig, (0.1, 0.1, 0.8, 0.8))
+    # Axes construction -------------------------------------------------------
 
-        # formatting: remove ticklabels on the main axes since they're not
-        # meaningful
-        self.ax.set_xticks([])
-        self.ax.set_yticks([])
-        self.divider = make_axes_locatable(self.ax)
-        self.fig.add_axes(self.ax)
+    def _configure_axes(self):
+        """
+        given the number of chromosomes and the number of data files
+        configured, create a bunch of subplots.
 
-    def _make_colorbar_axes(self):
-        cax_total_width = 0.4
-        cax_total_padding = 0.8
-        width = cax_total_width / self.n
-        pad = cax_total_padding / self.n
-        self.caxes = []
-        for i in range(self.n):
-            self.caxes.append(
-                self.divider.append_axes('right', size=width, pad=pad))
+        Abuses matplotlib.gridspec.GridSpec
+        """
+        # The area that will be subdivided into subplots per chrom.
+        # TODO: expose this to the figure-saving method, which should get its
+        # bbox [in part] from these coords.
+        CHROM = dict(
+            left=0.05,
+            right=0.8,
+            top=0.9,
+            bottom=0.2,
+            wspace=0.01,
+            hspace=0.1)
 
-    def _make_alpha_slider_axes(self):
-        # Alpha sliders.
-        self.slider_axes = []
-        for i in range(self.n):
-            self.slider_axes.append(
-                self.divider.append_axes('bottom', size=0.1, pad=0.1))
+        # Area used for alpha sliders
+        SLIDER_PAD = 0.01
+        SLIDER = dict(
+            left=0.15,
+            right=0.70,
+            bottom=0.1,
+            top=CHROM['bottom'] - SLIDER_PAD,
+            hspace=0.5,
+        )
 
-    def _make_min_slider_axes(self):
-        return
-        self.min_slider_ax1 = plt.Axes(self.fig, (0.7, 0.07, 0.07, 0.02))
-        self.min_slider_ax2 = plt.Axes(self.fig, (0.7, 0.02, 0.07, 0.02))
-        self.fig.add_axes(self.min_slider_ax1)
-        self.fig.add_axes(self.min_slider_ax2)
+        # Area used for colorbars
+        # TODO: similar to CHROM, expose this to figure-saving method
+        CBAR_PAD = 0.01
+        CBAR = dict(
+            left=CHROM['right'] + CBAR_PAD,
+            right=0.95,
+            wspace=1.5,
+            top=CHROM['top'],
+            bottom=CHROM['bottom'],
+        )
+
+        # Area used for checkboxes.
+        CHECKS = dict(
+            top=SLIDER['top'],
+            bottom=SLIDER['bottom'],
+            left=CBAR['left'],
+            right=CBAR['right'],
+            wspace=CBAR['wspace'],
+            hspace=SLIDER['hspace'])
+
+        RADIO_PAD = 0.01
+        RADIO = (
+            CHROM['left'],    # left
+            SLIDER['bottom'],  # bottom
+            SLIDER['left'] - CHROM['left'] - RADIO_PAD,  # width
+            SLIDER['top'] - SLIDER['bottom'],    # height
+        )
+
+        self.radio_ax = plt.Axes(self.fig, RADIO)
+        self.fig.add_axes(self.radio_ax)
+
+        # Set up the grids upon which new axes will eventually be organized and
+        # created
+        nrows = int(np.ceil(np.sqrt(self.nchroms)))
+        ncols = nrows
+
+        assert nrows * ncols >= len(self.chroms)
+
+        chrom_grid = gs.GridSpec(nrows, ncols)
+        chrom_grid.update(**CHROM)
+
+        slider_grid = gs.GridSpec(self.nfiles, 1)
+        slider_grid.update(**SLIDER)
+
+        colorbar_grid = gs.GridSpec(1, self.nfiles)
+        colorbar_grid.update(**CBAR)
+
+        checks_grid = gs.GridSpec(self.nfiles, self.nfiles)
+        checks_grid.update(**CHECKS)
+
+        # Now create the actual axes, and store them in self.*_axs dictionaries
+        # for later access -- keyed by chrom (for chrom_axs) or filenames (all
+        # others)
+        self.chrom_axs = {}
+        for chrom, spec in zip(self.chroms, chrom_grid):
+            ax = plt.subplot(spec)
+            ax.set_yticks([])
+            ax.set_xticks([])
+            ax.set_title(chrom, size=10)
+            self.chrom_axs[chrom] = ax
+
+        self.slider_axs = {}
+        for fn, spec in zip(self.fns, slider_grid):
+            self.slider_axs[fn] = plt.subplot(spec)
+
+        self.colorbar_axs = {}
+        for fn, spec in zip(self.fns, colorbar_grid):
+            self.colorbar_axs[fn] = plt.subplot(spec)
+
+        self.checks_axs = {}
+        for i in range(self.nfiles):
+            # this way only axes on the diagonal across the checkbox grid will
+            # be created
+            ax = plt.subplot(checks_grid[i, i])
+            ax.set_yticks([])
+            ax.set_xticks([])
+            ax.patch.set_color('k')
+            ax.SHOW = True
+            ax.last_slider_val = 0.5
+            self.checks_axs[self.fns[i]] = ax
 
     def _make_annotation_axes(self):
+        """
+        Makes axes along the top upon which to print genomic coords
+        """
         self.annotation_ax = plt.Axes(
-            self.fig, (0.1, 0.9, 0.8, 0.05), frame_on=False)
+            self.fig, (0.1, 0.95, 0.8, 0.03), frame_on=False)
         self.annotation_ax.set_xticks([])
         self.annotation_ax.set_yticks([])
 
@@ -198,85 +320,30 @@ class HilbertGUI(object):
             verticalalignment='center', size=10, animated=True)
         self.fig.add_axes(self.annotation_ax)
 
-    def _make_checkbox_axes(self):
-        self.check_ax = plt.Axes(self.fig, (0.02, 0.02, 0.6, 0.1))
-        self.fig.add_axes(self.check_ax)
-
-    def _make_radio_axes(self):
-        self.radio_ax = plt.Axes(self.fig, (0.85, 0.02, 0.1, 0.1))
-        self.fig.add_axes(self.radio_ax)
-
-    def _imshow_matrices(self):
-        self.mappables = []
-
-        for i in range(self.n):
-            h = self.hilberts[i]
-            cmap = self.colormaps[i]
-            if i == 0:
-                picker = 5
-            else:
-                picker = None
-            self.mappables.append(
-                self.ax.imshow(
-                    h.masked, interpolation='nearest', origin='upper',
-                    cmap=cmap, picker=picker))
-
-        # Initialize alphas
-        for m in self.mappables:
-            m.set_alpha(0.5)
-
-    def _matrix_colorbars(self):
-        # colorbars
-        self.cbars = []
-        for i in range(self.n):
-            m = self.mappables[i]
-            cax = self.caxes[i]
-            self.cbars.append(plt.colorbar(m, cax=cax))
-
-        # Tweak colorbar labels
-        for cbar in self.cbars:
-            for txt in cbar.ax.get_yticklabels():
-                txt.set_size(8)
+    # Initialize widgets ------------------------------------------------------
 
     def _init_alpha_sliders(self):
-        # Set up sliders with sensible default labels
-        self.sliders = []
+        """
+        Add sliders to self.slider_axs.  Assumes self._configure_axes has been
+        called so that self.slider_axs has been populated.
+        """
+        self.sliders = {}
 
-        for i in range(self.n):
-            fn = self.config['data'][i]['filename']
-            label = '%s: %s' % (string.letters[i], os.path.basename(fn))
+        for fn in self.fns:
+            # Disable for now....
+            #label = '%s: %s' % (string.letters[i], os.path.basename(fn))
+            label = ""
             slider = Slider(
-                self.slider_axes[i],
+                self.slider_axs[fn],
                 label,
                 valmin=0,
                 valmax=1,
-                valinit=0.5)
+                valinit=0.5,
+                facecolor='0.3')
             slider.label.set_size(10)
-            self.sliders.append(slider)
+            self.sliders[fn] = slider
 
-        #self.slider1.poly.set_color('#7a0510')
-        #self.slider2.poly.set_color('#08316d')
-
-    def _init_min_sliders(self):
-        return
-        self.min_slider1 = Slider(
-            self.min_slider_ax1,
-            'min',
-            valmin=self.h1.masked.min(),
-            valmax=self.h1.masked.max(),
-            valinit=0)
-
-        self.min_slider2 = Slider(
-            self.min_slider_ax2,
-            'min',
-            valmin=self.h2.masked.min(),
-            valmax=self.h2.masked.max(),
-            valinit=0)
-
-        self.min_slider1.poly.set_color('#7a0510')
-        self.min_slider2.poly.set_color('#08316d')
-        self.min_slider1.label.set_size(10)
-        self.min_slider2.label.set_size(10)
+        # TODO: it would be a nice touch if slider color == max cmap color
 
     def _init_checks(self):
         self.check_labels = []
@@ -291,7 +358,10 @@ class HilbertGUI(object):
                                    self.check_display)
         
     def _init_radio(self):
-        # For controlling log/linear color scale
+        """
+        Add radio buttons to the radio ax for color scale.
+        self._make_radio_axes() needs to have been called.
+        """
         self.radio = RadioButtons(
             self.radio_ax,
             labels=['log', 'linear'],
@@ -299,41 +369,74 @@ class HilbertGUI(object):
 
     def _make_connections(self):
         # Alpha sliders
-        for i in range(self.n):
-            self.sliders[i].on_changed(
-                self._slider_callback_factory(
-                    self.mappables[i], self.cbars[i]))
-
-        """
-        # Min sliders change thresh
-        self.min_slider1.on_changed(
-            self._min_slider_callback_factory(
-                self.h1, self.mappable1, self.cbar1))
-        self.min_slider2.on_changed(
-            self._min_slider_callback_factory(
-                self.h2, self.mappable2, self.cbar2))
-        """
+        for fn in self.fns:
+            self.sliders[fn].on_changed(
+                self._slider_callback_factory(fn))
 
         # Radio callback changes color scale
         self.radio.on_clicked(self._radio_callback)
-        #Checkbox callback changes what hilberts are shown
-        self.checks.on_clicked(self._check_callback)
-        
+
+        self.fig.canvas.mpl_connect('button_press_event', self._check_callback)
         self.fig.canvas.mpl_connect('motion_notify_event', self._coord_tracker)
         self.fig.canvas.mpl_connect('pick_event', self._coord_callback)
+
+    # Plot data ---------------------------------------------------------------
+
+    def _imshow_matrices(self):
+        """
+        Assumes HilbertMatrix objects have already been created in
+        self.hilberts; this just imshow()s each underlying matrix on the
+        appropriate axes
+        """
+        # Like the structure of self.hilberts, self.mappables is keyed by chrom
+        # and then filename.
+        self.mappables = defaultdict(dict)
+
+        for chrom in self.chroms:
+            for fn in self.fns:
+                h = self.hilberts[chrom][fn]
+                if len(self.mappables[chrom]) == 0:
+                    picker = 5
+                else:
+                    picker = None
+                cmap = self.colormaps[fn]
+                ax = self.chrom_axs[chrom]
+                mappable = ax.imshow(
+                    h.masked, interpolation='nearest', origin='upper',
+                    cmap=cmap, picker=picker)
+                mappable.set_alpha(0.5)
+                self.mappables[chrom][fn] = mappable
+
+    def _matrix_colorbars(self):
+        """
+        Adds colorbars.  Assumes that self._configure_axes() and
+        self._imshow_matrices() have been called so that self.colorbar_axs and
+        self.mappables have been populated.
+        """
+        self.colorbars = {}
+
+        # even though we have nchroms x nfiles mappables, we only need to make
+        # colorbars for nfiles of them.  So just grab the mappables for the
+        # first configured chrom.
+        chrom = self.chroms[0]
+        for fn in self.fns:
+            self.colorbars[fn] = plt.colorbar(
+                self.mappables[chrom][fn],
+                cax=self.colorbar_axs[fn])
+
+        # Tweak colorbar labels
+        for cbar in self.colorbars.values():
+            for txt in cbar.ax.get_yticklabels():
+                txt.set_size(8)
 
     def plot(self):
         """
         Does most of the work to set up the figure, axes, and widgets.
         """
         # These methods construct axes in the right places
-        self._make_main_axes()
-        self._make_colorbar_axes()
-        self._make_alpha_slider_axes()
-        self._make_min_slider_axes()
+        self.fig = plt.figure(figsize=(8, 8))
+        self._configure_axes()
         self._make_annotation_axes()
-        self._make_radio_axes()
-        self._make_checkbox_axes()
 
         # Plot the matrices and their colorbars
         self._imshow_matrices()
@@ -341,12 +444,44 @@ class HilbertGUI(object):
 
         # Initialize the various widgets
         self._init_alpha_sliders()
-        self._init_min_sliders()
         self._init_radio()
-        self._init_checks()
 
         # Connect callbacks to events
         self._make_connections()
+
+    # Helper methods for getting various info when given an axes --------------
+
+    def _chrom_from_axes(self, ax):
+        """
+        Reverse lookup into self.chrom_axs to return what chromsome a given
+        axes represents.
+        """
+        for chrom, chrom_ax in self.chrom_axs.items():
+            if chrom_ax == ax:
+                return chrom
+
+    def _hilberts_from_axes(self, ax):
+        """
+        Given an axes, return the {filename: HilbertMatrix} dictionary of
+        HilbertMatrix objects that are plotted on it.
+        """
+        chrom = self._chrom_from_axes(ax)
+        return self.hilberts[chrom]
+
+    def _first_hilbert_from_axes(self, ax):
+        """
+        Some of the callbacks don't care which of the possibly multiple
+        HilbertMatrix objects are plotted on the matrix -- they just need one
+        of them in order to get the genomic coords.
+        """
+        return self._hilberts_from_axes(ax).itervalues().next()
+
+    def _fn_from_check_ax(self, ax):
+        for fn, check_ax in self.checks_axs.iteritems():
+            if check_ax == ax:
+                return fn
+
+    # Callbacks and callback helpers ------------------------------------------
 
     def _coord_tracker(self, event):
         """
@@ -363,7 +498,8 @@ class HilbertGUI(object):
         # coords from being in the colorbar or annotation Axes
         x = event.xdata
         y = event.ydata
-        if (x is None) or (y is None) or (event.inaxes is not self.ax):
+        if (x is None) or (y is None) \
+                or (event.inaxes not in self.chrom_axs.values()):
             s = ""
 
         # Get matrix coords
@@ -378,13 +514,14 @@ class HilbertGUI(object):
             if (xi >= self.matrix_dim) or (yi >= self.matrix_dim):
                 s = ""
             else:
-                # Genomic coords from (x,y)
-                s = '%s:%s-%s' % self.hilberts[0].xy2chrom(xi, yi)
+                # Identify the HilbertMatrix objects for this axes
+                hms = self._hilberts_from_axes(event.inaxes)
 
-                v = []
-                for letter, h in zip(string.letters, self.hilberts):
-                    v.append('%s=%s' % (letter, h.matrix[yi, xi]))
-                s += self._xy_to_value_string(xi, yi)
+                # Really we only need one of them.
+                hm = hms.itervalues().next()
+
+                # Genomic coords from (x,y)
+                s = '%s:%s-%s' % hm.xy2chrom(xi, yi)
 
         # Update text, redraw just the text object, and blit the background
         # previously saved
@@ -407,9 +544,8 @@ class HilbertGUI(object):
             print
             print 'mouse x:', x, 'xi:', xi
             print 'mouse y:', y, 'yi:', yi
-        s = '%s:%s-%s' % self.hilberts[0].xy2chrom(xi, yi)
-
-        s += '\n' + self._xy_to_value_string(xi, yi)
+        h = self._first_hilbert_from_axes(event.artist.axes)
+        s = '%s:%s-%s' % h.xy2chrom(xi, yi)
         print s
         sys.stdout.flush()
 
@@ -422,56 +558,78 @@ class HilbertGUI(object):
         else:
             raise ValueError("unspecified label for radio button")
 
-    def _check_callback(self, label):
-        for i in xrange(len(self.check_labels)):
-            if label == self.check_labels[i]:
-                self.mappables[i].set_visible(not \
-                        self.mappables[i].get_visible())
-        plt.draw()
-        
-    def _slider_callback_factory(self, mappable, cbar):
+    def _check_callback(self, event):
         """
-        Given a mappable (i.e., object returned from imshow()), return
-        a function that will modify it based on the slider's value.
+        Toggles the alpha between 0.0 and 0.5 and also changes the color of the
+        checkbox axes.
+        """
+        ax = event.inaxes
+        fn = self._fn_from_check_ax(ax)
+        if ax in self.checks_axs.values():
+            ax.SHOW = not ax.SHOW
+            color = {True: 'k', False: 'w'}
+            if ax.SHOW:
+
+                self.sliders[fn].set_val(ax.last_slider_val)
+            else:
+                ax.last_slider_val = self.sliders[fn].val
+                self.sliders[fn].set_val(0)
+            ax.patch.set_color(color[ax.SHOW])
+            plt.draw()
+
+    def _slider_callback_factory(self, fn):
+        """
+        Given a filename, return a function that will modify all that
+        filename's mappables based on the slider's value.
         """
         def _slider_callback(x):
-            mappable.set_alpha(x)
-            cbar.set_alpha(x)
-            cbar.update_normal(mappable)
+            for chrom in self.chroms:
+                mappable = self.mappables[chrom][fn]
+                cbar = self.colorbars[fn]
+                mappable.set_alpha(x)
+                cbar.set_alpha(x)
+                cbar.update_normal(mappable)
 
         return _slider_callback
 
-    def _min_slider_callback_factory(self, h, mappable, cbar):
-        def _min_slider_callback(x):
-            h.mask_low_values(min_val=x)
-            mappable.set_data(h.masked)
+    def _colormap_normalizer(self, fn, norm):
+        for chrom in self.chroms:
+            self.mappables[chrom][fn].set_norm(norm)
+        self.colorbars[fn].set_norm(norm)
+        #self.colorbars[fn].update_normal(self.mappables[chrom][fn])
 
-        return _min_slider_callback
+    def _min_max_for_fn(self, fn):
+        """
+        Identify the (masked) min/max values across all chroms for filename
+        `fn`
+        """
+        mns, mxs = [], []
+        for chrom in self.chroms:
+            m = self.hilberts[chrom][fn].masked
+            mns.append(m.min())
+            mxs.append(m.max())
+        mn = min(mns)
+        mx = max(mxs)
+        return mn, mx
 
     def _log(self):
         """
         Update colomaps of the plotted images to use log-scaled color
         """
-        for i in range(self.n):
-            norm = matplotlib.colors.LogNorm(
-                vmin=self.hilberts[i].masked.min(),
-                vmax=self.hilberts[i].masked.max())
-            self.mappables[i].set_norm(norm)
-            self.cbars[i].set_norm(norm)
-            self.cbars[i].update_normal(self.mappables[i])
+        for fn in self.fns:
+            mn, mx = self._min_max_for_fn(fn)
+            norm = matplotlib.colors.LogNorm(vmin=mn, vmax=mx)
+            self._colormap_normalizer(fn, norm)
         plt.draw()
 
     def _linear(self):
         """
         Update colormaps of the plotted images to use linear-scaled color
         """
-        for i in range(self.n):
-            norm = matplotlib.colors.Normalize(
-                vmin=self.hilberts[i].masked.min(),
-                vmax=self.hilberts[i].masked.max())
-            self.mappables[i].set_norm(norm)
-            self.cbars[i].set_norm(norm)
-            self.cbars[i].update_normal(self.mappables[i])
+        for fn in self.fns:
+            mn, mx = self._min_max_for_fn(fn)
+            norm = matplotlib.colors.Normalize(vmin=mn, vmax=mx)
+            self._colormap_normalizer(fn, norm)
         plt.draw()
 
 
@@ -479,3 +637,27 @@ def gui_main(parser, args):
     g = HilbertGUI(args.config_file)
     g.plot()
     plt.show()
+
+
+def _debug():
+    config = dict(
+        dim=128,
+        chrom=['chr10', 'chr11', 'chr12'],
+        genome='hg19',
+        data=[
+            dict(
+                filename='data/cpg-islands.hg19.chr10.bed',
+                colormap='Blues'),
+            dict(
+                filename='data/refseq.chr10.exons.bed',
+                colormap='Reds'),
+            dict(
+                filename='data/phastcons.chr10.bed',
+                colormap='Spectral_r')
+        ]
+    )
+
+    g = HilbertGUI(config)
+    g.plot()
+    plt.show()
+    return g
