@@ -90,8 +90,10 @@ class HilbertBase(object):
             raise ValueError('matrix_dim %s not a power of 2' % matrix_dim)
         self.matrix_dim = matrix_dim
         self.ncells = matrix_dim * matrix_dim
-        self.matrix = np.zeros((self.matrix_dim, self.matrix_dim), \
-                                dtype=np.float)
+        self.matrix = np.zeros(
+            (self.matrix_dim, self.matrix_dim),
+            dtype=np.float
+        )
         self.masked = self.matrix
 
     def update(self, d1, d2, value=1, func=np.add):
@@ -224,15 +226,16 @@ class HilbertMatrix(HilbertNormalized):
         self.genome = genome
         self.chrom = chrom
         self.use_chrom_range = False
-        
+
         # grab the dict of chrom lengths for this genome
         if isinstance(self.genome, basestring):
             self.chromdict = pbt.chromsizes(self.genome)
         elif isinstance(self.genome, dict):
             self.chromdict = self.genome
         else:
-            raise ValueError('`genome` must be either a string assembly name '
-                    ' or a dictionary of chrom:(start, stop)')
+            raise ValueError(
+                '`genome` must be either a string assembly name '
+                ' or a dictionary of chrom:(start, stop)')
 
         if self.chrom != "genome":
             chrom_range_tuple = get_interval_from_string(self.chrom)
@@ -240,8 +243,9 @@ class HilbertMatrix(HilbertNormalized):
                 # grab the length of the requested chromosome
                 self.chrom_length = self.chromdict[self.chrom][1]
             else:
-                (self.chrom, self.range_start, self.range_end) = \
-                        chrom_range_tuple
+                (self.chrom,
+                 self.range_start,
+                 self.range_end) = chrom_range_tuple
                 self.chrom_length = self.range_end - self.range_start
                 self.use_chrom_range = True
 
@@ -263,7 +267,7 @@ class HilbertMatrix(HilbertNormalized):
         print self.chrom_length
 
         super(HilbertMatrix, self).__init__(matrix_dim, self.chrom_length)
-        
+
         print "using matrix of size", self.matrix_dim, "there are", \
               self.ncells, "cells in the matrix and each cell represents", \
               int(self.dist_per_cell), "base pairs."
@@ -274,8 +278,6 @@ class HilbertMatrix(HilbertNormalized):
         chrom_offsets = []
         chrom_names = []
         self.temp_files = []
-
-
 
         # populate the matrix with the data contained in self.file
         self.build()
@@ -296,8 +298,8 @@ class HilbertMatrix(HilbertNormalized):
                 # range requested so intersect the main file
                 # against the a range_file built from the range
                 range_str = self.chrom + '\t' + \
-                            str(self.range_start) + '\t' + \
-                            str(self.range_end)
+                    str(self.range_start) + '\t' + \
+                    str(self.range_end)
                 range_file = pbt.BedTool(range_str, from_string=True)
                 return main_file.intersect(range_file)
         else:
@@ -355,7 +357,7 @@ class HilbertMatrix(HilbertNormalized):
             matrix_dist = xy2d(self.matrix_dim, x, y)
             chrom = self.chrom
             start = matrix_dist * self.dist_per_cell
-            end = start + self.dist_per_cell 
+            end = start + self.dist_per_cell
         else:
             matrix_dist = xy2d(self.matrix_dim, x, y)
             bp_dist = matrix_dist * self.dist_per_cell
@@ -365,7 +367,7 @@ class HilbertMatrix(HilbertNormalized):
             chrom_offset = self.chrom_offsets_list[idx]
             bp_dist_from_chrom_start = bp_dist - chrom_offset
             start = int(bp_dist_from_chrom_start / self.dist_per_cell) * \
-                    self.dist_per_cell
+                self.dist_per_cell
             end = start + self.dist_per_cell
 
         return chrom, int(start), int(end)
@@ -424,7 +426,6 @@ class HilbertMatrix(HilbertNormalized):
                                          chrom, start,
                                          end]) + '\n')
         mat_dump.close()
-
 
     def norm_by_total_intervals(self):
         rows, cols = self.matrix.shape
