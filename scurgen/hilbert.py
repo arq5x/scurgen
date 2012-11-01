@@ -221,7 +221,12 @@ class HilbertNormalized(HilbertBase):
 
 
 class HilbertMatrix(HilbertNormalized):
-    def __init__(self, file, genome, chrom, matrix_dim, incr_column=None):
+    def __init__(self, file, genome, chrom, matrix_dim, incr_column=None, default_chroms=True):
+        """
+        If `default_chroms` is True, then only use the pybedtools-defined
+        "default" chromosomes.  For example, this will be only the autosomes
+        and X and Y for human, or just the euchromatic chromosomes for dm3.
+        """
         self.file = file
         self.genome = genome
         self.chrom = chrom
@@ -230,6 +235,14 @@ class HilbertMatrix(HilbertNormalized):
         # grab the dict of chrom lengths for this genome
         if isinstance(self.genome, basestring):
             self.chromdict = pbt.chromsizes(self.genome)
+            if default_chroms:
+                try:
+                    self.chromdict = self.chromdict.default
+                except AttributeError:
+                    raise ValueError(
+                        "Early version of pybedtools, or no chromosome "
+                        "default set for genome %s.  Use "
+                        "`default_chroms=False` instead." % self.genome)
         elif isinstance(self.genome, dict):
             self.chromdict = self.genome
         else:
