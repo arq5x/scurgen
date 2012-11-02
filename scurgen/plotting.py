@@ -489,6 +489,34 @@ class HilbertPlot(object):
             self._colormap_normalizer(fn, norm)
         plt.draw()
 
+    def save(self, *args, **kwargs):
+        """
+        Compute the bounding box of the chrom axes and colorbar axes alone.
+        """
+        # Figure.savefig() has a `bbox_inches` kwarg.  The trick is to figure
+        # out, given the *display* coordinates covered by the chrom axes and
+        # colorbar axes, what the current figure *inches* should be.
+
+        # This gets the union of all bboxes of axes we care about
+        artists = []
+        axes = self.chrom_axs.values() + self.colorbar_axs.values()
+        bboxes = []
+        for ax in axes:
+            bboxes.append(ax.get_window_extent())
+            for txt in ax.findobj(matplotlib.text.Text):
+                bboxes.append(
+                    txt.get_window_extent(
+                        renderer=self.fig.canvas.renderer)
+                )
+
+        union = matplotlib.transforms.Bbox.union(bboxes)
+
+        # Convert to inches, thanks to
+        # http://stackoverflow.com/questions/4325733/\
+        # save-a-subplot-in-matplotlib
+        extent = union.transformed(self.fig.dpi_scale_trans.inverted())
+        self.fig.savefig(bbox_inches=extent, *args, **kwargs)
+
 
 class HilbertGUI(HilbertPlot):
     def __init__(self, *args, **kwargs):
@@ -742,6 +770,7 @@ def _debug_HilbertPlot():
     plt.show()
     return g
 
+
 def _debug_HilbertGUI():
     config = dict(
         dim=16,
@@ -775,5 +804,3 @@ if __name__ == '__main__':
         g = d[to_run]()
     except IndexError:
         print 'first arg is Plot or GUI'
-
-
