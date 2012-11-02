@@ -720,10 +720,32 @@ def gui_main(parser, args):
     plt.show()
 
 
-def _debug():
+def _debug_HilbertPlot():
     config = dict(
-        dim=128,
-        chrom=['chr10', 'chr11', 'chr12'],
+        dim=16,
+        chrom=['chr10', 'chr11'],
+        genome='hg19',
+        data=[
+            dict(
+                filename='data/cpg-islands.hg19.chr10.bed',
+                colormap='Blues'),
+            dict(
+                filename='data/refseq.chr10.exons.bed',
+                colormap='Reds'),
+            dict(
+                filename='data/phastcons.chr10.bed',
+                colormap='Spectral_r')
+        ]
+    )
+    g = HilbertPlot(config)
+    g.plot()
+    plt.show()
+    return g
+
+def _debug_HilbertGUI():
+    config = dict(
+        dim=16,
+        chrom=['chr10', 'chr11'],
         genome='hg19',
         data=[
             dict(
@@ -742,3 +764,16 @@ def _debug():
     g.plot()
     plt.show()
     return g
+
+if __name__ == '__main__':
+    import sys
+    try:
+        to_run = sys.argv[1]
+        d = {'Plot': _debug_HilbertPlot,
+             'GUI': _debug_HilbertGUI}
+
+        g = d[to_run]()
+    except IndexError:
+        print 'first arg is Plot or GUI'
+
+
