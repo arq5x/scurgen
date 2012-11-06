@@ -433,11 +433,6 @@ class HilbertPlot(object):
         print s
         sys.stdout.flush()
 
-    def _fn_from_check_ax(self, ax):
-        for fn, check_ax in self.checks_axs.iteritems():
-            if check_ax == ax:
-                return fn
-
     def set_alpha(self, fn, alpha):
         if isinstance(fn, int):
             fn = self.fns[fn]
@@ -730,6 +725,11 @@ class HilbertGUI(HilbertPlot):
                 self.mappables[chrom][fn].set_alpha(self.sliders[fn].val)
 
         plt.draw()
+
+    def _fn_from_check_ax(self, ax):
+        for fn, check_ax in self.checks_axs.iteritems():
+            if check_ax == ax:
+                return fn
 
     def _slider_callback_factory(self, fn):
         """
