@@ -69,6 +69,12 @@ def plot_hilbert(filenames, genome, chrom, dim=128):
 class HilbertPlot(object):
     def __init__(self, config, debug=False):
         """
+        Class to handling plotting multiple Hilbert matrices.
+
+        This class is designed for programmatic access; if you want to interact
+        with it via a GUI, then use the HilbertGUI subclass which adds the GUI
+        elements.
+
         :param config:
             If a string, then treat it as a filename of a YAML config file; if
             a dictionary then treat it as the config dictionary itself.

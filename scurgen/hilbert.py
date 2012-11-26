@@ -55,12 +55,18 @@ def xy2d(n, x, y):
 
 
 def rc2d(n, row, col):
+    """
+    Same as xy2d, but use row, column semantics instead of x, y
+    """
     x = col
     y = n - row - 1
     return xy2d(n, x, y)
 
 
 def d2rc(n, d):
+    """
+    Same as d2xy, but use row, column semantics instead of x, y
+    """
     x, y = d2xy(n, d)
     col = x
     row = y
@@ -68,6 +74,9 @@ def d2rc(n, d):
 
 
 def get_interval_from_string(s):
+    """
+    e.g., ``"chr21:5-100"`` -> ``('chr2l', 5, 100)``
+    """
     chrom_range_pattern = re.compile('(\S+)\:([0-9]+)\-([0-9]+)')
 
     if chrom_range_pattern.search(s):
@@ -125,7 +134,16 @@ class HilbertBase(object):
             self.matrix[row, col] = func(self.matrix[row, col], value)
 
     def mask_low_values(self, min_val=0):
+        """
+        Mask values <= `min_val`
+        """
         self.masked = np.ma.masked_array(self.matrix, self.matrix <= min_val)
+
+    def mask_high_values(self, max_val=0):
+        """
+        Mask values >= `min_val`
+        """
+        self.masked = np.ma.masked_array(self.matrix, self.matrix >= max_val)
 
     def reset(self):
         """
@@ -136,8 +154,8 @@ class HilbertBase(object):
     def curve(self):
         """
         Returns a 3-tuple of the x-coords, y-coords, and labels for the curve.
-        The (x, y) coords correspond to (col, row) positions in a matrix such
-        that that the following will work::
+        The (x, y) coords correspond to (col, row) positions in a matrix (note
+        the switch) such that that the following will work::
 
             x, y, labels = x.curve()
             plt.imshow(x.matrix)
@@ -158,8 +176,8 @@ class HilbertBase(object):
 class HilbertNormalized(HilbertBase):
     def __init__(self, matrix_dim, length):
         """
-        Hilbert curve class that handles distance in arbitrary units (e.g.,
-        genomic bp) instead of in cell numbers.
+        Subclass of HilbertBase to handle distance in arbitrary units
+        (e.g., genomic bp) instead of in cell numbers.
 
         :param matrix_dim:
             The number of dimensions on a side (power of 2)
@@ -225,6 +243,8 @@ class HilbertMatrix(HilbertNormalized):
     def __init__(self, file, genome, chrom, matrix_dim, incr_column=None,
                  default_chroms=True):
         """
+        Subclass of HilbertNormalized that represents a genomic HilbertMatrix.
+
         If `default_chroms` is True, then only use the pybedtools-defined
         "default" chromosomes.  For example, this will be only the autosomes
         and X and Y for human, or just the euchromatic chromosomes for dm3.
@@ -351,9 +371,15 @@ class HilbertMatrix(HilbertNormalized):
             return pbt.BedTool(bedg_filename)
 
     def rc2chrom(self, row, col):
+        """
+        (chrom, start, stop) of a (row, col) coord
+        """
         return self.get_chrom_range(col, row)
 
     def xy2chrom(self, x, y):
+        """
+        (chrom, start, stop) of an (x, y) coord
+        """
         return self.get_chrom_range(x, y)
 
     def get_chrom_range(self, x, y):
@@ -431,7 +457,9 @@ class HilbertMatrix(HilbertNormalized):
         self._cleanup()
 
     def dump_matrix(self):
-
+        """
+        Export matrix as a text file in the same dir as the original
+        """
         mat_dump = open(self.file + ".mtx", 'w')
         # header indicates the dimension of the matrix
         mat_dump.write(str(self.matrix_dim) + '\n')
@@ -445,15 +473,18 @@ class HilbertMatrix(HilbertNormalized):
         mat_dump.close()
 
     def norm_by_total_intervals(self):
-        rows, cols = self.matrix.shape
-        for r in range(rows):
-            for c in range(cols):
-                self.matrix[r][c] /= self.num_intervals
+        """
+        Normalize matrix to total number of intervals
+        """
+        self.matrix /= self.num_intervals
 
 
 class HilbertMatrixBigWig(HilbertMatrix):
     # Need to override build(), but otherwise just like a HilbertMatrix
     def __init__(self, *args, **kwargs):
+        """
+        Subclass of HilbertMatrix specifically for bigWig format files
+        """
         super(HilbertMatrixBigWig, self).__init__(*args, **kwargs)
 
     def build(self):
@@ -497,7 +528,3 @@ class HilbertMatrixBigWig(HilbertMatrix):
             self.matrix[rows, cols] = values
             last_stop += nbins
         self._cleanup()
-
-    def bigwig_data(self, chrom, start, stop):
-        res = self.bigwig.summarize_from_full(chrom, start, stop, 1)
-        return (res.sum_data / res.valid_count)[0]
