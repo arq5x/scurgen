@@ -221,7 +221,8 @@ class HilbertNormalized(HilbertBase):
 
 
 class HilbertMatrix(HilbertNormalized):
-    def __init__(self, file, genome, chrom, matrix_dim, incr_column=None, default_chroms=True):
+    def __init__(self, file, genome, chrom, matrix_dim, incr_column=None,
+                 default_chroms=True):
         """
         If `default_chroms` is True, then only use the pybedtools-defined
         "default" chromosomes.  For example, this will be only the autosomes
@@ -387,14 +388,14 @@ class HilbertMatrix(HilbertNormalized):
 
     def build(self):
         """
-        must compute a distance from the
-        origing of the hilbert matrix start (0,0.
-        to do so, we create a normalization factor which
-        is the length of the chrom divided by the number
-        of cells in the matrix (d^2). then, each coordinate
-        "normalized by this constant to compute it's distance.
-        this distance is then converted to an x,y coordinate
-        in the matrix using d2xy
+        Build the matrix.
+
+        Need to compute a distance from the origin of the hilbert matrix start
+        (0,0).  To do so, we create a normalization factor which is the length
+        of the chrom divided by the number of cells in the matrix (d^2). Then,
+        each coordinate is normalized by this constant to compute it's
+        distance.  This distance is then converted to an x,y coordinate in the
+        matrix using d2xy().
         """
         ivls = self._get_intervals()
         for ivl in ivls:
