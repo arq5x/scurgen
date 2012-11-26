@@ -1,3 +1,4 @@
+from bx.bbi.bigwig_file import BigWigFile
 import numpy as np
 import pybedtools as pbt
 import sys
@@ -271,8 +272,10 @@ class HilbertMatrix(HilbertNormalized):
             self.chrom_offsets = {}
             self.chrom_offsets_list = []
             self.chrom_names_list = []
+            self.chrom_d = {}
             for chrom in self.chromdict:
                 self.chrom_offsets[chrom] = curr_offset
+                self.chrom_d[chrom] = curr_offset / (matrix_dim * matrix_dim)
                 self.chrom_offsets_list.append(curr_offset)
                 self.chrom_names_list.append(chrom)
                 self.chrom_length += self.chromdict[chrom][1]
@@ -446,3 +449,55 @@ class HilbertMatrix(HilbertNormalized):
         for r in range(rows):
             for c in range(cols):
                 self.matrix[r][c] /= self.num_intervals
+
+
+class HilbertMatrixBigWig(HilbertMatrix):
+    # Need to override build(), but otherwise just like a HilbertMatrix
+    def __init__(self, *args, **kwargs):
+        super(HilbertMatrixBigWig, self).__init__(*args, **kwargs)
+
+    def build(self):
+        """
+        Build the matrix.
+
+        Since bigWig files are essentially pre-summarized, this just extracts
+        the chrom/start/stop represented by each cell in the matrix and fills
+        it with the value from the bigWig file.
+        """
+        self.bigwig = BigWigFile(open(self.file))
+
+        precomputed = np.load(
+            os.path.join(
+                os.path.dirname(__file__),
+                'precomputed.npz'))
+        rc = precomputed['_%s' % self.matrix_dim]
+
+        if self.chrom == 'genome':
+            chroms = self.chromdict.keys()
+
+        else:
+            chroms = [self.chrom]
+
+        last_stop = 0
+        for chrom in chroms:
+            start, stop = self.chromdict[chrom]
+
+            # fraction of total that this chrom is
+            frac = self.chromdict[chrom][1] / float(self.chrom_length)
+            print "%s is %s of genome..." % (chrom, frac)
+            nbins = int(frac * (self.matrix_dim * self.matrix_dim))
+            results = self.bigwig.summarize(chrom, start, stop, nbins)
+
+            d_start = last_stop
+            d_stop = d_start + nbins
+            rows = rc[d_start:d_stop, 0]
+            cols = rc[d_start:d_stop, 1]
+            values = results.sum_data / results.valid_count
+            values[np.isnan(values)] = 0
+            self.matrix[rows, cols] = values
+            last_stop += nbins
+        self._cleanup()
+
+    def bigwig_data(self, chrom, start, stop):
+        res = self.bigwig.summarize_from_full(chrom, start, stop, 1)
+        return (res.sum_data / res.valid_count)[0]

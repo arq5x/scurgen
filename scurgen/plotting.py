@@ -10,7 +10,7 @@ from matplotlib.widgets import Slider, RadioButtons
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gs
 import pybedtools as pbt
-from scurgen.hilbert import HilbertMatrix
+from scurgen.hilbert import HilbertMatrix, HilbertMatrixBigWig
 
 
 def data_dir():
@@ -157,7 +157,7 @@ class HilbertPlot(object):
 
         chroms = self.config['chrom']
 
-        if chroms == 'genome':
+        if chroms == 'chroms':
             chroms = pbt.chromsizes(self.config['genome']).default.keys()
 
         if isinstance(chroms, basestring):
@@ -166,11 +166,17 @@ class HilbertPlot(object):
         self.chroms = chroms
         self.fns = []
         for chunk in self.config['data']:
+            is_bigwig = chunk.get('bigwig', False)
+            if is_bigwig:
+                HilbertClass = HilbertMatrixBigWig
+            else:
+                HilbertClass = HilbertMatrix
+
             fn = chunk['filename']
             self.fns.append(fn)
             self.colormaps[fn] = getattr(matplotlib.cm, chunk['colormap'])
             for chrom in self.chroms:
-                hm = HilbertMatrix(fn, chrom=chrom, **hilbert_matrix_kwargs)
+                hm = HilbertClass(fn, chrom=chrom, **hilbert_matrix_kwargs)
                 hm.mask_low_values()
                 self.hilberts[chrom][fn] = hm
 
