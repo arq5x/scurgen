@@ -372,6 +372,36 @@ class HilbertPlot(object):
         self.fig.canvas.mpl_connect('pick_event', self._coord_callback)
         self.fig.canvas.mpl_connect('resize_event', self._background_snapshot)
 
+        self._post_plot_tasks()
+
+    def _post_plot_tasks(self):
+        """
+        Called after the plot is created; place extra stuff here.
+        """
+        self.cs = {}
+        if self.chroms == ['genome']:
+            precomputed = np.load(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    'precomputed.npz'))
+            rc = precomputed['_%s' % self.matrix_dim]
+
+            # just get the first one; we only need the chrom_d dict
+            genome_chrom = self.chroms[0]
+            h = self.hilberts[genome_chrom].values()[0]
+            ax = self.chrom_axs[genome_chrom]
+            chrom_d, chrom_bins = h.chrom2rc()
+            z = np.zeros_like(h.matrix)
+            c = 1
+            vs = []
+            for chrom in h.chromdict.keys():
+                z[:] = 0
+                rc = chrom_d[chrom]
+                z[rc[:, 0], rc[:, 1]] = 1
+                vs.append(c)
+                c += 1
+                cs = ax.contour(z, [0.5], colors='k', linestyles='dotted')
+
     # Helper methods for getting various info when given an axes --------------
 
     def _chrom_from_axes(self, ax):
@@ -855,6 +885,8 @@ class HilbertGUI(HilbertPlot):
         """
         super(HilbertGUI, self).plot(figsize=figsize)
 
+    def _post_plot_tasks(self):
+        super(HilbertGUI, self)._post_plot_tasks()
         # Initialize the various widgets
         self._init_alpha_sliders()
         self._init_radio()
