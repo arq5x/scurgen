@@ -497,11 +497,7 @@ class HilbertMatrixBigWig(HilbertMatrix):
         """
         self.bigwig = BigWigFile(open(self.file))
 
-        precomputed = np.load(
-            os.path.join(
-                os.path.dirname(__file__),
-                'precomputed.npz'))
-        rc = precomputed['_%s' % self.matrix_dim]
+        chrom_rc, chrom_bins = self.chrom2rc()
 
         if self.chrom == 'genome':
             chroms = self.chromdict.keys()
@@ -509,22 +505,40 @@ class HilbertMatrixBigWig(HilbertMatrix):
         else:
             chroms = [self.chrom]
 
-        last_stop = 0
         for chrom in chroms:
+            rc = chrom_rc[chrom]
+            nbins = chrom_bins[chrom]
+
             start, stop = self.chromdict[chrom]
-
-            # fraction of total that this chrom is
-            frac = self.chromdict[chrom][1] / float(self.chrom_length)
-            print "%s is %s of genome..." % (chrom, frac)
-            nbins = int(frac * (self.matrix_dim * self.matrix_dim))
             results = self.bigwig.summarize(chrom, start, stop, nbins)
-
-            d_start = last_stop
-            d_stop = d_start + nbins
-            rows = rc[d_start:d_stop, 0]
-            cols = rc[d_start:d_stop, 1]
             values = results.sum_data / results.valid_count
             values[np.isnan(values)] = 0
-            self.matrix[rows, cols] = values
-            last_stop += nbins
+
+            self.matrix[rc[:,0], rc[:, 1]] = values
+
         self._cleanup()
+
+
+    def chrom2rc(self):
+        """
+        Return a dictionary of {chrom: (rows, cols)} and {chrom: nbins}
+        """
+        precomputed = np.load(
+            os.path.join(
+                os.path.dirname(__file__),
+                'precomputed.npz'))
+        rc = precomputed['_%s' % self.matrix_dim]
+
+        d = {}
+        bins = {}
+        last_stop = 0
+        for chrom, startstop in self.chromdict.items():
+            start, stop = startstop
+            frac = self.chromdict[chrom][1] / float(self.chrom_length)
+            nbins = int(frac * (self.matrix_dim * self.matrix_dim))
+            d_start = last_stop
+            d_stop = d_start + nbins
+            d[chrom] = rc[d_start:d_stop, :]
+            bins[chrom] = nbins
+            last_stop += nbins
+        return d, bins
