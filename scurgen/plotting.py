@@ -69,7 +69,7 @@ def plot_hilbert(filenames, genome, chrom, dim=128):
 class HilbertPlot(object):
     def __init__(self, config, debug=False):
         """
-        Class to handling plotting multiple Hilbert matrices.
+        Class for handling plotting multiple Hilbert matrices.
 
         This class is designed for programmatic access; if you want to interact
         with it via a GUI, then use the HilbertGUI subclass which adds the GUI
@@ -193,6 +193,8 @@ class HilbertPlot(object):
 
     def _parse_config(self, config):
         """
+        Helper method to parse the configuration.
+
         Returns a validated config dictionary.  `config` can be a filename of
         a YAML-formatted file or an existing dictionary
         """
@@ -202,13 +204,19 @@ class HilbertPlot(object):
         return config
 
     def _validate_config(self, config):
+        """
+        Helper method to validate the configuration
+        """
+
         # TODO: more work on validation
         assert 'data' in config
 
     def _configure_axes(self):
         """
-        given the number of chromosomes and the number of data files
-        configured, create a bunch of subplots.
+        Helper method to construct axes.
+
+        Given the number of chromosomes and the number of data files
+        configured, this creates a bunch of subplots.
 
         Abuses matplotlib.gridspec.GridSpec
         """
@@ -264,7 +272,7 @@ class HilbertPlot(object):
 
     def _make_annotation_axes(self, event=None):
         """
-        Makes axes along the top upon which to print genomic coords
+        Helper method to make an axes upon which to print genomic coords
         """
         self.annotation_ax = plt.Axes(
             self.fig, (0.1, 0.95, 0.8, 0.03), frame_on=False)
@@ -284,11 +292,16 @@ class HilbertPlot(object):
         self.fig.add_axes(self.annotation_ax)
 
     def _background_snapshot(self, event=None):
+        """
+        Helper method to take a snapshot of the annotation axes
+        """
         self.background = self.fig.canvas.copy_from_bbox(
             self.annotation_ax.bbox)
 
     def _imshow_matrices(self):
         """
+        Helper method to plot matrices.
+
         Assumes HilbertMatrix objects have already been created in
         self.hilberts; this just imshow()s each underlying matrix on the
         appropriate axes
@@ -314,9 +327,11 @@ class HilbertPlot(object):
 
     def _matrix_colorbars(self):
         """
-        Adds colorbars.  Assumes that self._configure_axes() and
-        self._imshow_matrices() have been called so that self.colorbar_axs and
-        self.mappables have been populated.
+        Helper method to add colorbars.
+
+        Assumes that self._configure_axes() and self._imshow_matrices() have
+        been called so that self.colorbar_axs and self.mappables have been
+        populated.
         """
         self.colorbars = {}
 
@@ -336,7 +351,13 @@ class HilbertPlot(object):
 
     def plot(self, figsize=(8, 6)):
         """
-        Does most of the work to set up the figure, axes, and widgets.
+        Plots and shows the configured HilbertMatrix objects.
+
+        This method calls all of the plotting setup helper methods which in
+        turn set up all the axes needed for plotting.
+
+        :param figsize:
+            (width, height) tuple for the figure size to create
         """
         # These methods construct axes in the right places
         self.fig = plt.figure(figsize=figsize)
@@ -354,6 +375,8 @@ class HilbertPlot(object):
 
     def _chrom_from_axes(self, ax):
         """
+        Helper method to return which chrom an axes represents
+
         Reverse lookup into self.chrom_axs to return what chromsome a given
         axes represents.
         """
@@ -363,6 +386,8 @@ class HilbertPlot(object):
 
     def _hilberts_from_axes(self, ax):
         """
+        Helper method to return HilbertMatrix objects plotted on an axes.
+
         Given an axes, return the {filename: HilbertMatrix} dictionary of
         HilbertMatrix objects that are plotted on it.
         """
@@ -371,6 +396,8 @@ class HilbertPlot(object):
 
     def _first_hilbert_from_axes(self, ax):
         """
+        Helper method to return a single HilbertMatrix
+
         Some of the callbacks don't care which of the possibly multiple
         HilbertMatrix objects are plotted on the matrix -- they just need one
         of them in order to get the genomic coords.
@@ -381,8 +408,7 @@ class HilbertPlot(object):
 
     def _coord_tracker(self, event):
         """
-        Callback that updates text based on the genomic coords of the current
-        mouse position.
+        Callback to show genomic coords of the current mouse position.
         """
         # Restore original background
         self.fig.canvas.restore_region(self.background)
@@ -432,6 +458,9 @@ class HilbertPlot(object):
         return '; '.join(v)
 
     def _coord_callback(self, event):
+        """
+        Callback function to report chrom/start/stop data of the mouse pointer
+        """
         x = event.mouseevent.xdata
         y = event.mouseevent.ydata
         xi = int(round(x))
@@ -446,6 +475,15 @@ class HilbertPlot(object):
         sys.stdout.flush()
 
     def set_alpha(self, fn, alpha):
+        """
+        Set alpha for file `fn`
+
+        :param fn:
+            Which filename to set the alpha for
+
+        :param alpha:
+            Transparency of the matrix colors (0-1)
+        """
         if isinstance(fn, int):
             fn = self.fns[fn]
         for chrom in self.chroms:
@@ -457,6 +495,9 @@ class HilbertPlot(object):
         plt.draw()
 
     def _colormap_normalizer(self, fn, norm):
+        """
+        Helper function to apply the norm to all matrices for filename.
+        """
         for chrom in self.chroms:
             self.mappables[chrom][fn].set_norm(norm)
         self.colorbars[fn].set_norm(norm)
@@ -464,7 +505,9 @@ class HilbertPlot(object):
 
     def _min_max_for_fn(self, fn):
         """
-        Identify the (masked) min/max values across all chroms for filename
+        Helper function to get data limits.
+
+        Identifies the (masked) min/max values across all chroms for filename
         `fn`
         """
         mns, mxs = [], []
@@ -498,7 +541,16 @@ class HilbertPlot(object):
 
     def save(self, *args, **kwargs):
         """
-        Compute the bounding box of the chrom axes and colorbar axes alone.
+        Save the figure.
+
+        Computes the bounding box of the chrom axes and colorbar axes alone, so
+        that any additional GUI elements are not saved.
+
+        :param fname:
+            File name to save as; extension is meaningful
+
+        Additional args and kwargs are passed verbatim to
+        matplotlib.pyplot.savefig
         """
         # Figure.savefig() has a `bbox_inches` kwarg.  The trick is to figure
         # out, given the *display* coordinates covered by the chrom axes and
@@ -534,7 +586,7 @@ class HilbertGUI(HilbertPlot):
 
     def _configure_axes(self):
         """
-        given the number of chromosomes and the number of data files
+        Given the number of chromosomes and the number of data files
         configured, create a bunch of subplots.
 
         Abuses matplotlib.gridspec.GridSpec
