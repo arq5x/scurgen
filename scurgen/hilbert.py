@@ -137,13 +137,13 @@ class HilbertBase(object):
         """
         Mask values <= `min_val`
         """
-        self.masked = np.ma.masked_array(self.matrix, self.matrix <= min_val)
+        self.masked = np.ma.masked_where(self.masked.mask | (self.matrix <= min_val), self.matrix)
 
-    def mask_high_values(self, max_val=0):
+    def mask_high_values(self, max_val=np.inf):
         """
         Mask values >= `min_val`
         """
-        self.masked = np.ma.masked_array(self.matrix, self.matrix >= max_val)
+        self.masked = np.ma.masked_where(self.masked.mask | (self.matrix >= max_val), self.matrix)
 
     def reset(self):
         """
