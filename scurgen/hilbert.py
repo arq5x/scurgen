@@ -104,7 +104,7 @@ class HilbertBase(object):
             (self.matrix_dim, self.matrix_dim),
             dtype=np.float
         )
-        self.masked = self.matrix
+        self.masked = np.ma.masked_equal(self.matrix, 1)
 
     def update(self, d1, d2, value=1, func=np.add):
         """
