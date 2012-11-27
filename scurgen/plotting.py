@@ -873,6 +873,19 @@ class HilbertGUI(HilbertPlot):
 
         return _slider_callback
 
+    def set_alpha(self, fn, alpha):
+        """
+        Set alpha for file `fn`
+
+        :param fn:
+            Which filename to set the alpha for
+
+        :param alpha:
+            Transparency of the matrix colors (0-1)
+        """
+        super(HilbertGUI, self).set_alpha(fn, alpha)
+        self.sliders[fn].val = alpha
+
 
 def gui_main(parser, args):
     g = HilbertGUI(args.config_file)
