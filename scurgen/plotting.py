@@ -11,6 +11,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gs
 import pybedtools as pbt
 from scurgen.hilbert import HilbertMatrix, HilbertMatrixBigWig
+from scipy import stats
 
 
 def data_dir():
@@ -531,6 +532,43 @@ class HilbertPlot(object):
             mn, mx = self._min_max_for_fn(fn)
             norm = matplotlib.colors.Normalize(vmin=mn, vmax=mx)
             self._colormap_normalizer(fn, norm)
+        plt.draw()
+
+    def set_colorbar_limits(self, min_val, max_val, fn=None, percentile=False):
+        """
+        Manually set colorbar limits.
+
+        :param min_val: Minimum value
+        :param max_val: Maximum value
+        :param fn:
+            If not None, then apply the colorbar limits only to the matrices
+            showing this filename; otherwise apply to all files shown.
+        :param percentile:
+            If True, then assume `min_val` and `max_val` represent percentiles
+            (e.g., 95 for 95th percentile) and re-calculate actual values based
+            on the data
+        """
+        if fn is not None:
+            fns = [fn]
+        else:
+            fns = self.fns
+        for fn in fns:
+            to_concat = []
+            for chrom in self.chroms:
+                if percentile:
+                    to_concat.append(self.hilberts[chrom][fn].matrix)
+
+            if percentile:
+                concatenated = np.concatenate([i.ravel() for i in to_concat])
+                vmin = stats.scoreatpercentile(concatenated, min_val)
+                vmax = stats.scoreatpercentile(concatenated, max_val)
+
+            else:
+                vmin = min_val
+                vmax = max_val
+            norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+            self._colormap_normalizer(fn, norm)
+
         plt.draw()
 
     def reset_mask(self, fn=None):
