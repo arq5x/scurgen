@@ -533,6 +533,80 @@ class HilbertPlot(object):
             self._colormap_normalizer(fn, norm)
         plt.draw()
 
+    def reset_mask(self, fn=None):
+        """
+        Reset the mask
+
+        :param fn:
+            If not None, then reset the mask only for the matrices showing this
+            filename; otherwise apply to all matrices.
+        """
+        if fn is not None:
+            fns = [fn]
+        else:
+            fns = self.fns
+
+        for chrom in self.chroms:
+            for fn in fns:
+                h = self.hilberts[chrom][fn]
+                h.masked.mask[:] = False
+                mn, mx = self._min_max_for_fn(fn)
+                norm = matplotlib.colors.Normalize(vmin=mn, vmax=mx)
+                self._colormap_normalizer(fn, norm)
+        plt.draw()
+
+    def mask_low_values(self, min_val=0, fn=None):
+        """
+        Mask low values across all matrices
+
+        Colorbar limits will be re-calculated to reflect the newly masked data.
+
+        :param min_val:
+            Values <= `min_val` will be masked out.
+
+        :param fn:
+            If not None, then only apply the masking to filename `fn` matrices
+            (across all chromsomes)
+        """
+        if fn is not None:
+            fns = [fn]
+        else:
+            fns = self.fns
+        for chrom in self.chroms:
+            for fn in fns:
+                h = self.hilberts[chrom][fn]
+                h.mask_low_values(min_val)
+                mn, mx = self._min_max_for_fn(fn)
+                norm = matplotlib.colors.Normalize(vmin=mn, vmax=mx)
+                self._colormap_normalizer(fn, norm)
+        plt.draw()
+
+    def mask_high_values(self, max_val=np.inf):
+        """
+        Mask high values across all matrices
+
+        Colorbar limits will be re-calculated to reflect the newly masked data.
+
+        :param max_val:
+            Values >= `max_val` will be masked out.
+
+        :param fn:
+            If not None, then only apply the masking to filename `fn` matrices
+            (across all chromsomes)
+        """
+        if fn is not None:
+            fns = [fn]
+        else:
+            fns = self.fns
+        for chrom in self.chroms:
+            for fn in fns:
+                h = self.hilberts[chrom][fn]
+                h.mask_high_values(max_val)
+                mn, mx = self._min_max_for_fn(fn)
+                norm = matplotlib.colors.Normalize(vmin=mn, vmax=mx)
+                self._colormap_normalizer(fn, norm)
+        plt.draw()
+
     def save(self, *args, **kwargs):
         """
         Save the figure.
