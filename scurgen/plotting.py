@@ -451,12 +451,6 @@ class HilbertPlot(object):
         self.annotation_ax.draw_artist(self.current_position_label)
         self.fig.canvas.blit(self.annotation_ax.bbox)
 
-    def _xy_to_value_string(self, x, y):
-        v = []
-        for letter, h in zip(string.letters, self.hilberts):
-            v.append('%s=%s' % (letter, h.matrix[y, x]))
-        return '; '.join(v)
-
     def _coord_callback(self, event):
         """
         Callback function to report chrom/start/stop data of the mouse pointer
