@@ -668,11 +668,11 @@ class HilbertPlot(object):
         bboxes = []
         for ax in axes:
             bboxes.append(ax.get_window_extent())
-            for txt in ax.findobj(matplotlib.text.Text):
+            bboxes.append(
+                ax.title.get_window_extent(renderer=self.fig.canvas.renderer))
+            for txt in ax.get_yticklabels():
                 bboxes.append(
-                    txt.get_window_extent(
-                        renderer=self.fig.canvas.renderer)
-                )
+                    txt.get_window_extent(renderer=self.fig.canvas.renderer))
 
         union = matplotlib.transforms.Bbox.union(bboxes)
 
