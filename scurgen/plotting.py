@@ -557,7 +557,7 @@ class HilbertGUI(object):
             self._linear()
         else:
             raise ValueError("unspecified label for radio button")
-
+            
     def _check_callback(self, event):
         """
         Toggles the alpha between 0.0 and 0.5 and also changes the color of the
@@ -569,13 +569,17 @@ class HilbertGUI(object):
             ax.SHOW = not ax.SHOW
             color = {True: 'k', False: 'w'}
             if ax.SHOW:
-
                 self.sliders[fn].set_val(ax.last_slider_val)
             else:
                 ax.last_slider_val = self.sliders[fn].val
                 self.sliders[fn].set_val(0)
             ax.patch.set_color(color[ax.SHOW])
-            plt.draw()
+
+            # explicitly update all the matrices with the new value
+            for chrom in self.chroms:
+                self.mappables[chrom][fn].set_alpha(self.sliders[fn].val)
+
+        plt.draw()
 
     def _slider_callback_factory(self, fn):
         """

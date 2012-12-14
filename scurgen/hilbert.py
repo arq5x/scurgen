@@ -253,14 +253,15 @@ class HilbertMatrix(HilbertNormalized):
             self.chrom_offsets = {}
             self.chrom_offsets_list = []
             self.chrom_names_list = []
-            for chrom in self.chromdict:
+            self.chrom_d = {}
+            for chrom in chroms:
                 self.chrom_offsets[chrom] = curr_offset
+                self.chrom_d[chrom] = curr_offset / (matrix_dim * matrix_dim)
                 self.chrom_offsets_list.append(curr_offset)
                 self.chrom_names_list.append(chrom)
                 self.chrom_length += self.chromdict[chrom][1]
                 curr_offset += self.chromdict[chrom][1]
             print "genome size: ",
-        print self.chrom_length
 
         super(HilbertMatrix, self).__init__(matrix_dim, self.chrom_length)
         

@@ -33,8 +33,8 @@ def annotated_hilbert(dim, dist_limit=None, ax=None):
 if __name__ == "__main__":
     fig = plt.figure(figsize=(17, 10))
     rows = 2
-    cols = 3
-    i = 1
+    cols = 2
+    i = 5
     for row in range(rows):
         for col in range(cols):
             dim = 2 ** i
