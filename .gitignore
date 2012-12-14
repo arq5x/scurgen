@@ -1,3 +1,4 @@
+doc/source/autodocs/*
 *.swp
 *.swo
 *.egg-info/*
